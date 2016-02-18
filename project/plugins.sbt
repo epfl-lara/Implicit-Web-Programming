@@ -61,4 +61,4 @@ addSbtPlugin("org.scala-sbt" % "sbt-core-next" % "0.1.1")
 
 //see http://lihaoyi.github.io/hands-on-scala-js/ (The Project Code/project/build.sbt
 ////provide the auto-reload-on-change behavior and the forwarding of SBT logspam to the browser console.
-//addSbtPlugin("com.lihaoyi" % "workbench" % "0.2.3")
+addSbtPlugin("com.lihaoyi" % "workbench" % "0.2.3")

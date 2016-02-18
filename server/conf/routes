@@ -9,3 +9,7 @@ GET     /                           controllers.Application.index
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
 
 POST    /api/*path                  controllers.Application.autowireApi(path: String)
+
+GET     /theme-monokai.js           controllers.Assets.at(path="/public/javascripts/aceSettings", file="theme-monokai.js")
+
+GET     /mode-scala.js              controllers.Assets.at(path="/public/javascripts/aceSettings", file="mode-scala.js")

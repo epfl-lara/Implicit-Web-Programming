@@ -23,6 +23,9 @@ lazy val leonSource = RootProject(uri("git://github.com/epfl-lara/leon.git"))
 // use eliding to drop some debug code in the production build
 lazy val elideOptions = settingKey[Seq[String]]("Set limit for elidable functions")
 
+//Resolver for "libraryDependencies += "com.scalawarrior" %%% "scalajs-ace" % "0.0.2","
+resolvers += "amateras-repo" at "http://amateras.sourceforge.jp/mvn/"
+
 // instantiate the JS project for SBT with some additional settings
 lazy val client: Project = (project in file("client"))
   .settings(
@@ -32,6 +35,7 @@ lazy val client: Project = (project in file("client"))
     scalacOptions ++= Settings.scalacOptions,
     libraryDependencies ++= Settings.scalajsDependencies.value,
     libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.5.4",
+    libraryDependencies += "com.scalawarrior" %%% "scalajs-ace" % "0.0.2",
     // by default we do development build, no eliding
     elideOptions := Seq(),
     scalacOptions ++= elideOptions.value,
