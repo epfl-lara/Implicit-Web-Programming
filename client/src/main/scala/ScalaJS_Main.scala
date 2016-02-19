@@ -42,13 +42,15 @@ object ScalaJS_Main extends js.JSApp {
 //    }
 //  }
 
-  def getSourceCode() = {
-    var sourceCode = ""
+  def getSourceCode(whatToDoWithSourceCode: String => Unit) = {
+//    var sourceCode = ""
     AjaxClient[Api].getSourceCode().call().onComplete {
-      case Failure(exception) => println("Unable to fetch source code: " + exception.getMessage)
-      case Success(fetchedsourceCode) => sourceCode = fetchedsourceCode
+      case Failure(exception) => {println("Unable to fetch source code: " + exception.getMessage)}
+      case Success(fetchedsourceCode) => {println("ajax source code request success"); /*sourceCode = */whatToDoWithSourceCode(fetchedsourceCode)}
     }
-    sourceCode
+//    println(sourceCode)
+//    println("sourceCode should have been printed (in function getSourceCode of ScalaJS_Main)")
+//    sourceCode
   }
 
   def initialiseAndIncludeAceEditorForSourceCode() = {
@@ -60,10 +62,11 @@ object ScalaJS_Main extends js.JSApp {
     val changeCallbackFunction: js.Function1[scala.scalajs.js.Any, Unit] = aceEditorChangeCallback _
     editor.getSession().on("change", changeCallbackFunction)
 
-    val sourceCode = getSourceCode()
-    println(sourceCode)
-    println("sourceCode should have been printed")
-    editor.setValue(sourceCode)
+    getSourceCode(s => editor.setValue(s))
+//    val sourceCode = getSourceCode()
+//    println(sourceCode)
+//    println("sourceCode should have been printed (in function initialiseAndIncludeAceEditorForSourceCode of ScalaJS_Main)")
+//    editor.setValue(sourceCode)
   }
 
   def includeScriptInMainTemplate(scriptTagToInclude: scalatags.JsDom.TypedTag[org.scalajs.dom.html.Script]) = {

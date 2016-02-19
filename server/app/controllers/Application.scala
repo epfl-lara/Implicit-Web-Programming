@@ -39,8 +39,8 @@ object Application extends Controller {
   }
 
 //  def index = Action {
-////    val pathToSourceProgram = "src/main/scala-2.11/SourceCode.scala"
-//    val pathToSourceProgram = "server/app/manipulatedFiles/SourceCode.scala"
+////    val pathToSourceProgram = "src/main/scala-2.11/SourceCode.txt"
+//    val pathToSourceProgram = "server/app/manipulatedFiles/SourceCode.txt"
 //    val leonStringOfSourceProgram = TestSourceToLeonString.path2LeonString(pathToSourceProgram)
 //
 //    Ok(views.html.index(leonStringOfSourceProgram))

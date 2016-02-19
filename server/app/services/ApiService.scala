@@ -1,6 +1,6 @@
 package services
 
-import manipulatedFiles.SourceCodeGetter
+import manipulatedFiles.SourceCodeManager
 import serverReporter.ServerReporter
 import shared.Api
 
@@ -11,8 +11,8 @@ import scala.io.BufferedSource
   */
 class ApiService extends Api{
   override def getSourceCode(): String = {
-//    //    val pathToLeonInput = "src/main/scala-2.11/manipulatedFiles/SourceCode.scala"
-//    val pathToLeonInput = "server/app/manipulatedFiles/SourceCode.scala"
+//    //    val pathToLeonInput = "src/main/scala-2.11/manipulatedFiles/SourceCode.txt"
+//    val pathToLeonInput = "server/app/manipulatedFiles/SourceCode.txt"
 //    val leonInputFile: BufferedSource = try {
 //      scala.io.Source.fromFile(pathToLeonInput)
 //    } catch {
@@ -28,9 +28,10 @@ class ApiService extends Api{
 //    leonInput
 ////    "SourceCode placeHolder"
     val srvReporter = new ServerReporter
-    val sourceCode = SourceCodeGetter.getSourceCode(srvReporter)
+    val sourceCode = SourceCodeManager.getSourceCode(srvReporter)
     srvReporter.flushMessageQueue((s:String) => println(s))
-    println("APIService:" + sourceCode)
+//    println("APIService:" + sourceCode)
     sourceCode
+//    "APIService: This should be some SourceCode, but right now, I'm debugging"
   }
 }

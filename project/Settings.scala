@@ -54,7 +54,8 @@ object Settings {
   val jvmDependencies = Def.setting(Seq(
     "com.vmunier" %% "play-scalajs-scripts" % versions.playScripts,
     "org.webjars" % "font-awesome" % "4.3.0-1" % Provided,
-    "org.webjars" % "bootstrap" % versions.bootstrap % Provided
+    "org.webjars" % "bootstrap" % versions.bootstrap % Provided,
+    "com.lihaoyi" %% "autowire" % versions.autowire
   ))
 
   /** Dependencies only used by the JS project (note the use of %%% instead of %%) */
@@ -64,7 +65,8 @@ object Settings {
     "com.github.japgolly.scalacss" %%% "ext-react" % versions.scalaCSS,
     "me.chrons" %%% "diode" % versions.diode,
     "me.chrons" %%% "diode-react" % versions.diode,
-    "org.scala-js" %%% "scalajs-dom" % versions.scalaDom
+    "org.scala-js" %%% "scalajs-dom" % versions.scalaDom,
+    "com.lihaoyi" %%% "autowire" % versions.autowire
   ))
 
   /** Dependencies for external JS libs that are bundled into a single .js file according to dependency order */
