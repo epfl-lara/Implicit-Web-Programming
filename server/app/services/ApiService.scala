@@ -34,4 +34,23 @@ class ApiService extends Api{
     sourceCode
 //    "APIService: This should be some SourceCode, but right now, I'm debugging"
   }
+
+
+  override def getSourceCodeBis(): String = {
+    println("getSourceCodeBis fun in ApiService called")
+    "Dummy"
+  }
+
+  override def setSourceCode(newSourceCode: String): Unit = {
+    val srvReporter = new ServerReporter
+    SourceCodeManager.rewriteSourceCode(newSourceCode, srvReporter)
+    srvReporter.flushMessageQueue((s:String) => println(s))
+  }
+
+  override def sendAndGetBackInt(i: Int): Int = {
+    println("sendAndGetBackInt")
+    i
+  }
+
+  override def getFive(): Int = 5
 }
