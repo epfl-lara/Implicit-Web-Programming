@@ -39,25 +39,20 @@ object SourceCodeManager {
     }
     val leonInput = leonInputFile.mkString
     leonInputFile.close
-
-    val file = new File(pathToSourceCodeFile)
-    val bw = new BufferedWriter(new FileWriter(file))
-    bw.write("test write in getSourceCode")
-    bw.close()
-
     leonInput
 
   }
 
   def rewriteSourceCode(newSourceCode: String, serverReporter: ServerReporter): Unit = {
 //    FileWriter try
-    serverReporter.report(Info, "fun rewriteSourceCode starting")
+    serverReporter.report(Info, "fun rewriteSourceCode starting with argument:\n"+newSourceCode)
     val file = new File(pathToSourceCodeFile)
     val bw = new BufferedWriter(new FileWriter(file))
     bw.write(newSourceCode)
     bw.close()
+    serverReporter.report(Info, "fun rewriteSourceCode returning")
 
-//    val pw = new PrintWriter(new File("hello.txt" ))
+    //    val pw = new PrintWriter(new File("hello.txt" ))
 //    pw.write("Hello, world")
 //    pw.close
 //

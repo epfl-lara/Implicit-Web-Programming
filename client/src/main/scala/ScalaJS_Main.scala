@@ -1,3 +1,6 @@
+import java.awt.event.{ActionEvent, ActionListener}
+import javax.swing.Timer
+
 import org.scalajs.dom
 import dom.document
 import shared.Api
@@ -24,13 +27,13 @@ object ScalaJS_Main extends js.JSApp {
 //    includeScriptInMainTemplate(script("console.info(\"hey\")"))
       AceEditor.initialiseAndIncludeEditorInWebPage()
 
+
     /**Request tests*/
 //    AjaxClient[Api].getSourceCodeBis().call().onComplete {
 //      case Failure(exception) => {println("getSourceCodBis failed")}
 //      case Success(dummy) => {println("getSourceCodBis succeeded " + dummy)}
 //    }
 //    AjaxClient[Api].sendAndGetBackInt(5).call().foreach((i:Int) => println("Sent and Get Back Int"))
-////    AjaxClient[Api].getFive().call().foreach((i:Int) => println("Sent and Get Back Int"))
 //    AjaxClient[Api].getFive().call().onSuccess {
 //      case i => println(i)
 //    }
@@ -93,17 +96,67 @@ object ScalaJS_Main extends js.JSApp {
         case None => println("Strange, someone asked to update the aceEditor while there is none")
       }
     }
+
+    def getEditorValue = {
+      aceEditor match {
+        case Some(e) => e.getValue()
+        case None => "[ERROR] fun getEditorValue was called while there was no aceEditor"
+      }
+    }
+
+//    private object setSourceCodeRequestsAbsorber {
+//      private val idleTimeNeededBeforeRequestTransmission_ds = 25
+//
+//      def newRequest() = {
+//        timeUntilNextRequest_ds = idleTimeNeededBeforeRequestTransmission_ds
+//      }
+//
+////      private val timeUntilNextRequestDecreaseTimer = new Timer(1, new ActionListener() {
+////        @Override
+////        def actionPerformed(arg0: ActionEvent) {
+////          if(timeUntilNextRequest_ds > 0) {
+////            timeUntilNextRequest_ds = timeUntilNextRequest_ds - 1
+////            if(idleTimeNeededBeforeRequestTransmission_ds == 0) {
+////              sendRequest()
+////            }
+////          }
+////        }
+////      })
+////      timeUntilNextRequestDecreaseTimer.setRepeats(true)
+////      timeUntilNextRequestDecreaseTimer.start()
+//
+////      org.scalajs.dom.setInterval( () => {
+////        println("absorber timer executed")
+////        if(timeUntilNextRequest_ds > 0) {
+////          timeUntilNextRequest_ds = idleTimeNeededBeforeRequestTransmission_ds - 1
+////          if(timeUntilNextRequest_ds == 0) {
+////            sendRequest()
+////          }
+////        }
+////
+////      }, 100)
+//
+//      private var timeUntilNextRequest_ds = 0
+//
+//      private def sendRequest() = {
+//        AjaxClient[Api].setSourceCode(getEditorValue).call().onComplete{
+//          case Failure(exception) => {println("setSourceCode request failed: " + exception.getMessage)}
+//          case Success(unit) => {println("setSourceCode request successful")}
+//        }
+//      }
+//    }
+
+    private def aceEditorChangeCallback(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit= {
+      println("ace change callback")
+//      AjaxClient[Api].setSourceCode(getEditorValue).call().onComplete{
+//        case Failure(exception) => {println("setSourceCode request failed: " + exception.getMessage)}
+//        case Success(unit) => {println("setSourceCode request successful")}
+//      }
+//      setSourceCodeRequestsAbsorber.newRequest()
+    }
   }
 
   def includeScriptInMainTemplate(scriptTagToInclude: scalatags.JsDom.TypedTag[org.scalajs.dom.html.Script]) = {
     dom.document.getElementById("scalajsScriptInclusionPoint").appendChild(scriptTagToInclude.render)
-  }
-
-  def aceEditorChangeCallback(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit= {
-    println("ace change callback")
-    AjaxClient[Api].setSourceCode("Hey").call().onComplete{
-      case Failure(exception) => {println("setSourceCode request failed: " + exception.getMessage)}
-      case Success(unit) => {println("setSourceCode request successful")/*; AceEditor.updateEditorContent()*/}
-    }
   }
 }
