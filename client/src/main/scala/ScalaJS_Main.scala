@@ -28,8 +28,8 @@ object ScalaJS_Main extends js.JSApp {
 //    dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
 //    displaySourceCode()
 //    includeScriptInMainTemplate(script("console.info(\"hey\")"))
-    createSourceCodeDivContent()
-    AceEditor.initialiseAndIncludeEditorInWebPage()
+    fillSourceCodeDiv()
+    fillViewerDiv()
     /**Request tests*/
 //    AjaxClient[Api].getSourceCodeBis().call().onComplete {
 //      case Failure(exception) => {println("getSourceCodBis failed")}
@@ -61,9 +61,8 @@ object ScalaJS_Main extends js.JSApp {
 
 //leon: AbstractEvaluator, ContextualEvaluator, Model, FunctionInvocation,
 
-  def createSourceCodeDivContent() = {
+  def fillSourceCodeDiv() = {
     val destinationDivId = "SourceCodeDiv"
-
 
     val title = <.h1("Source Code")
 
@@ -93,7 +92,17 @@ object ScalaJS_Main extends js.JSApp {
       submitButton,
       aceEditorDiv
     )
+    ReactDOM.render(divContent, document.getElementById(destinationDivId))
+    AceEditor.initialiseAndIncludeEditorInWebPage()
+  }
 
+  def fillViewerDiv() = {
+    val destinationDivId = "ViewerDiv"
+
+    val title = <.h1("Viewer")
+    val divContent = <.div(
+      title
+    )
     ReactDOM.render(divContent, document.getElementById(destinationDivId))
   }
 
