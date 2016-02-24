@@ -1,6 +1,7 @@
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing.Timer
 
+import japgolly.scalajs.react.{ReactDOM, Callback, CallbackTo}
 import org.scalajs.dom
 import dom.document
 import shared.Api
@@ -12,6 +13,8 @@ import scala.scalajs.js.annotation.JSExport
 import scala.util.{Failure, Success}
 
 import com.scalawarrior.scalajs.ace._
+
+import japgolly.scalajs.react.vdom.prefix_<^._
 
 /** Imports for using AjaxClient **/
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -25,9 +28,8 @@ object ScalaJS_Main extends js.JSApp {
 //    dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
 //    displaySourceCode()
 //    includeScriptInMainTemplate(script("console.info(\"hey\")"))
-      AceEditor.initialiseAndIncludeEditorInWebPage()
-
-
+    createSourceCodeDivContent()
+    AceEditor.initialiseAndIncludeEditorInWebPage()
     /**Request tests*/
 //    AjaxClient[Api].getSourceCodeBis().call().onComplete {
 //      case Failure(exception) => {println("getSourceCodBis failed")}
@@ -56,6 +58,44 @@ object ScalaJS_Main extends js.JSApp {
 //      case Success(sourceCode) => dom.document.getElementById("editor").setValue("hey")
 //    }
 //  }
+
+//leon: AbstractEvaluator, ContextualEvaluator, Model, FunctionInvocation,
+
+  def createSourceCodeDivContent() = {
+    val destinationDivId = "SourceCodeDiv"
+
+
+    val title = <.h1("Source Code")
+
+    def submitButtonCallback: Callback = {
+      Callback{
+        println("submit")
+      }
+    }
+    val submitButton = <.button(
+    ^.onClick --> submitButtonCallback,
+    "Submit"
+    )
+
+    val aceEditorDiv = <.div(
+      ^.id := "aceeditor",
+      ^.fontSize := "12px",
+      ^.position := "absolute",
+      ^.width := "50%",
+      ^.top := 130,
+      ^.right := 0,
+      ^.bottom := 0,
+      ^.left := 0
+    )
+
+    val divContent = <.div(
+      title,
+      submitButton,
+      aceEditorDiv
+    )
+
+    ReactDOM.render(divContent, document.getElementById(destinationDivId))
+  }
 
   def fetchAndUseSourceCode(whatToDoWithSourceCode: String => Unit) = {
 //    var sourceCode = ""
@@ -104,47 +144,13 @@ object ScalaJS_Main extends js.JSApp {
       }
     }
 
-//    private object setSourceCodeRequestsAbsorber {
-//      private val idleTimeNeededBeforeRequestTransmission_ds = 25
-//
-//      def newRequest() = {
-//        timeUntilNextRequest_ds = idleTimeNeededBeforeRequestTransmission_ds
-//      }
-//
-////      private val timeUntilNextRequestDecreaseTimer = new Timer(1, new ActionListener() {
-////        @Override
-////        def actionPerformed(arg0: ActionEvent) {
-////          if(timeUntilNextRequest_ds > 0) {
-////            timeUntilNextRequest_ds = timeUntilNextRequest_ds - 1
-////            if(idleTimeNeededBeforeRequestTransmission_ds == 0) {
-////              sendRequest()
-////            }
-////          }
-////        }
-////      })
-////      timeUntilNextRequestDecreaseTimer.setRepeats(true)
-////      timeUntilNextRequestDecreaseTimer.start()
-//
-////      org.scalajs.dom.setInterval( () => {
-////        println("absorber timer executed")
-////        if(timeUntilNextRequest_ds > 0) {
-////          timeUntilNextRequest_ds = idleTimeNeededBeforeRequestTransmission_ds - 1
-////          if(timeUntilNextRequest_ds == 0) {
-////            sendRequest()
-////          }
-////        }
-////
-////      }, 100)
-//
-//      private var timeUntilNextRequest_ds = 0
-//
-//      private def sendRequest() = {
-//        AjaxClient[Api].setSourceCode(getEditorValue).call().onComplete{
-//          case Failure(exception) => {println("setSourceCode request failed: " + exception.getMessage)}
-//          case Success(unit) => {println("setSourceCode request successful")}
-//        }
-//      }
-//    }
+    @JSExport
+    def setSourceCodeRequestWillBeRemoved() = {
+      AjaxClient[Api].setSourceCode(getEditorValue).call().onComplete{
+        case Failure(exception) => {println("setSourceCode request failed: " + exception.getMessage)}
+        case Success(unit) => {println("setSourceCode request successful")}
+      }
+    }
 
     private def aceEditorChangeCallback(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit= {
       println("ace change callback")

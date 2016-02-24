@@ -36,6 +36,7 @@ lazy val client: Project = (project in file("client"))
     libraryDependencies ++= Settings.scalajsDependencies.value,
     libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.5.4",
     libraryDependencies += "com.scalawarrior" %%% "scalajs-ace" % "0.0.2",
+    libraryDependencies += "com.github.japgolly.scalajs-react" %%% "core" % "0.10.4",
     // by default we do development build, no eliding
     elideOptions := Seq(),
     scalacOptions ++= elideOptions.value,
