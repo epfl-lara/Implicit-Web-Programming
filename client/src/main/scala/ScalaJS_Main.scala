@@ -24,41 +24,13 @@ import autowire._
 
 object ScalaJS_Main extends js.JSApp {
   def main(): Unit = {
-//    println("method main of ScalaJSExample is running")
-//    dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
-//    displaySourceCode()
-//    includeScriptInMainTemplate(script("console.info(\"hey\")"))
+    //    println("method main of ScalaJSExample is running")
+    //    dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
+    //    displaySourceCode()
+    //    includeScriptInMainTemplate(script("console.info(\"hey\")"))
     fillSourceCodeDiv()
     fillViewerDiv()
-    /**Request tests*/
-//    AjaxClient[Api].getSourceCodeBis().call().onComplete {
-//      case Failure(exception) => {println("getSourceCodBis failed")}
-//      case Success(dummy) => {println("getSourceCodBis succeeded " + dummy)}
-//    }
-//    AjaxClient[Api].sendAndGetBackInt(5).call().foreach((i:Int) => println("Sent and Get Back Int"))
-//    AjaxClient[Api].getFive().call().onSuccess {
-//      case i => println(i)
-//    }
-
-//    displaySourceCode()
   }
-
-//  def displaySourceCode() = {
-//    AjaxClient[Api].getSourceCode().call().onComplete {
-//      case Failure(exception) => println("Unable to fetch source code: " + exception.getMessage)
-////      case Success(sourceCode) => dom.document.getElementById("editor").innerHTML = sourceCode
-//      case Success(sourceCode) => includeScriptInMainTemplate(script("editor.setValue(\"" + sourceCode + "\")"))
-//    }
-//  }
-
-//  def displaySourceCode() = {
-//    AjaxClient[Api].getSourceCode().call().onComplete {
-//      case Failure(exception) => println("Unable to fetch source code: " + exception.getMessage)
-////      case Success(sourceCode) => dom.document.getElementById("editor").innerHTML = sourceCode
-//      case Success(sourceCode) => dom.document.getElementById("editor").setValue("hey")
-//    }
-//  }
-
 //leon: AbstractEvaluator, ContextualEvaluator, Model, FunctionInvocation,
 
   def fillSourceCodeDiv() = {
@@ -68,12 +40,12 @@ object ScalaJS_Main extends js.JSApp {
 
     def submitButtonCallback: Callback = {
       Callback{
-        println("submit")
+        println("submit source code change")
       }
     }
     val submitButton = <.button(
     ^.onClick --> submitButtonCallback,
-    "Submit"
+    "Submit source code change"
     )
 
     val aceEditorDiv = <.div(
@@ -100,22 +72,32 @@ object ScalaJS_Main extends js.JSApp {
     val destinationDivId = "ViewerDiv"
 
     val title = <.h1("Viewer")
+    def submitButtonCallback: Callback = {
+      Callback{
+        println("submit html change")
+      }
+    }
+    val submitButton = <.button(
+      ^.onClick --> submitButtonCallback,
+      "Submit html change"
+    )
     val divContent = <.div(
-      title
+      title,
+      submitButton
     )
     ReactDOM.render(divContent, document.getElementById(destinationDivId))
   }
 
-  def fetchAndUseSourceCode(whatToDoWithSourceCode: String => Unit) = {
-//    var sourceCode = ""
-    AjaxClient[Api].getSourceCode().call().onComplete {
-      case Failure(exception) => {println("Unable to fetch source code: " + exception.getMessage)}
-      case Success(fetchedsourceCode) => {println("ajax source code request success"); /*sourceCode = */whatToDoWithSourceCode(fetchedsourceCode)}
-    }
-//    println(sourceCode)
-//    println("sourceCode should have been printed (in function getSourceCode of ScalaJS_Main)")
-//    sourceCode
-  }
+//  def fetchAndUseSourceCode(whatToDoWithSourceCode: String => Unit) = {
+////    var sourceCode = ""
+//    AjaxClient[Api].getSourceCode().call().onComplete {
+//      case Failure(exception) => {println("Unable to fetch source code: " + exception.getMessage)}
+//      case Success(fetchedsourceCode) => {println("ajax source code request success"); /*sourceCode = */whatToDoWithSourceCode(fetchedsourceCode)}
+//    }
+////    println(sourceCode)
+////    println("sourceCode should have been printed (in function getSourceCode of ScalaJS_Main)")
+////    sourceCode
+//  }
 
   object AceEditor {
     //ID of the html div that should contain the aceeditor
@@ -129,7 +111,11 @@ object ScalaJS_Main extends js.JSApp {
       editor.setTheme("ace/theme/monokai")
       editor.getSession().setMode("ace/mode/scala")
       editor.getSession().setTabSize(2)
-      updateEditorContent()
+//      updateEditorContent()
+      AjaxClient[Api].getBootstrapSourceCode().call().onComplete {
+        case Failure(exception) => {println("Unable to fetch bootstrap source code: " + exception.getMessage)}
+        case Success(bootstrapSourceCode) => {println("ajax bootstrap source code request success"); editor.setValue(bootstrapSourceCode)}
+      }
       val changeCallbackFunction: js.Function1[scala.scalajs.js.Any, Unit] = aceEditorChangeCallback _
       editor.getSession().on("change", changeCallbackFunction)
 
@@ -139,12 +125,12 @@ object ScalaJS_Main extends js.JSApp {
       //    editor.setValue(sourceCode)
     }
 
-    def updateEditorContent() = {
-      aceEditor match {
-        case Some(editor) => fetchAndUseSourceCode(s => editor.setValue(s))
-        case None => println("Strange, someone asked to update the aceEditor while there is none")
-      }
-    }
+//    def updateEditorContent() = {
+//      aceEditor match {
+//        case Some(editor) => fetchAndUseSourceCode(s => editor.setValue(s))
+//        case None => println("Strange, someone asked to update the aceEditor while there is none")
+//      }
+//    }
 
     def getEditorValue = {
       aceEditor match {
@@ -153,13 +139,13 @@ object ScalaJS_Main extends js.JSApp {
       }
     }
 
-    @JSExport
-    def setSourceCodeRequestWillBeRemoved() = {
-      AjaxClient[Api].setSourceCode(getEditorValue).call().onComplete{
-        case Failure(exception) => {println("setSourceCode request failed: " + exception.getMessage)}
-        case Success(unit) => {println("setSourceCode request successful")}
-      }
-    }
+//    @JSExport
+//    def setSourceCodeRequestWillBeRemoved() = {
+//      AjaxClient[Api].setSourceCode(getEditorValue).call().onComplete{
+//        case Failure(exception) => {println("setSourceCode request failed: " + exception.getMessage)}
+//        case Success(unit) => {println("setSourceCode request successful")}
+//      }
+//    }
 
     private def aceEditorChangeCallback(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit= {
       println("ace change callback")
@@ -171,7 +157,7 @@ object ScalaJS_Main extends js.JSApp {
     }
   }
 
-  def includeScriptInMainTemplate(scriptTagToInclude: scalatags.JsDom.TypedTag[org.scalajs.dom.html.Script]) = {
-    dom.document.getElementById("scalajsScriptInclusionPoint").appendChild(scriptTagToInclude.render)
-  }
+//  def includeScriptInMainTemplate(scriptTagToInclude: scalatags.JsDom.TypedTag[org.scalajs.dom.html.Script]) = {
+//    dom.document.getElementById("scalajsScriptInclusionPoint").appendChild(scriptTagToInclude.render)
+//  }
 }

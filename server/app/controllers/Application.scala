@@ -2,7 +2,7 @@ package controllers
 
 import java.nio.ByteBuffer
 
-import backend.TestSourceToLeonString
+import trash.backend.TestSourceToLeonString
 import boopickle.Default._
 import play.api._
 import play.api.mvc._
@@ -40,7 +40,7 @@ object Application extends Controller {
 
 //  def index = Action {
 ////    val pathToSourceProgram = "src/main/scala-2.11/SourceCode.txt"
-//    val pathToSourceProgram = "server/app/manipulatedFiles/SourceCode.txt"
+//    val pathToSourceProgram = "server/app/trash.manipulatedFiles/SourceCode.txt"
 //    val leonStringOfSourceProgram = TestSourceToLeonString.path2LeonString(pathToSourceProgram)
 //
 //    Ok(views.html.index(leonStringOfSourceProgram))

@@ -1,4 +1,4 @@
-package backend
+package trash.backend
 
 import leon.frontends.scalac.{ExtractionPhase, ClassgenPhase}
 import leon.purescala.Definitions.Program

@@ -4,10 +4,7 @@ package shared
   * Created by dupriez on 2/12/16.
   */
 trait Api {
-  def getSourceCode(): String
-  def setSourceCode(newSourceCode: String): Unit
-
-  def getSourceCodeBis(): String
-  def sendAndGetBackInt(i: Int): Int
-  def getFive(): Int
+  def getBootstrapSourceCode(): String
+  def submitSourceCode(sourceCode: String): SourceCodeProcessingResult
+//  def submitHtml(don't know, something that indicate a change made to the html): String //New Source Code
 }

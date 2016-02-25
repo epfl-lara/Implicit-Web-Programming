@@ -1,4 +1,4 @@
-package manipulatedFiles
+package trash.manipulatedFiles
 
 import java.io._
 import javax.print.attribute.standard.Severity
@@ -11,14 +11,14 @@ import scala.io.BufferedSource
   * Created by dupriez on 2/15/16.
   */
 object SourceCodeManager {
-  val pathToManipulatedFilesFolder = "server/app/manipulatedFiles"
+  val pathToManipulatedFilesFolder = "server/app/trash.manipulatedFiles"
   val pathFromManipulatedFilesFolderToSourceCodeFile = "SourceCode.txt"
 
   def pathToSourceCodeFile = pathToManipulatedFilesFolder + "/" + pathFromManipulatedFilesFolderToSourceCodeFile
-//  val pathToLeonInput = "server/app/manipulatedFiles/SourceCode.txt"
+//  val pathToLeonInput = "server/app/trash.manipulatedFiles/SourceCode.txt"
 
   def getSourceCode(serverReporter: ServerReporter): String = {
-    //    val pathToLeonInput = "src/main/scala-2.11/manipulatedFiles/SourceCode.txt"
+    //    val pathToLeonInput = "src/main/scala-2.11/trash.manipulatedFiles/SourceCode.txt"
     serverReporter.report(Info, "Serving SourceCode...")
     var error = false
     val leonInputFile: BufferedSource = try {
