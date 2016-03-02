@@ -14,7 +14,7 @@ object BootstrapSourceCodeGetter {
 
   def getBootstrapSourceCode(serverReporter: ServerReporter): String = {
     //    val pathToLeonInput = "src/main/scala-2.11/trash.manipulatedFiles/SourceCode.txt"
-    serverReporter.report(Info, "Serving SourceCode...")
+    serverReporter.report(Info, "Serving bootstrap Source Code...")
     var error = false
     val bootstrapSourceCodeFile: BufferedSource = try {
       scala.io.Source.fromFile(pathToBootstrapSourceCodeFile)

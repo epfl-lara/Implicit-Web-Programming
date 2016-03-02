@@ -1,0 +1,1 @@
+The objective of this package is to turn an instance of WebPage(and it's content) into case classes that boopickle can pickle and send

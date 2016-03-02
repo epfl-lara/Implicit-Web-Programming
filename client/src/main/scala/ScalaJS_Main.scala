@@ -41,6 +41,10 @@ object ScalaJS_Main extends js.JSApp {
     def submitButtonCallback: Callback = {
       Callback{
         println("submit source code change")
+        AjaxClient[Api].submitSourceCode(AceEditor.getEditorValue).call().onComplete {
+          case Failure(exception) => {println("error during submission of the source code: " + exception.getMessage)}
+          case Success(sourceCodeProcessingResult) => {println("source code submission success"); println(sourceCodeProcessingResult.generatedHtml.testString)}
+        }
       }
     }
     val submitButton = <.button(
@@ -81,9 +85,11 @@ object ScalaJS_Main extends js.JSApp {
       ^.onClick --> submitButtonCallback,
       "Submit html change"
     )
+    val htmlDisplayerDiv = <.div()
     val divContent = <.div(
       title,
-      submitButton
+      submitButton,
+      htmlDisplayerDiv
     )
     ReactDOM.render(divContent, document.getElementById(destinationDivId))
   }
