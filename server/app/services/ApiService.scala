@@ -27,6 +27,7 @@ class ApiService extends Api{
     val relativePathsToWebpageBuildingDSLFiles = WebpageBuildingDSLFilesPathsProvider.relativePathsToWebpageBuildingDSLFiles.toList
 
     val serverReporter = new ServerReporter
+    serverReporter.printReportsInConsole = true
     //    SourceCodeManager.rewriteSourceCode(sourceCode, serverReporter)
 
     val leonReporter = new DefaultReporter(Set())
@@ -37,13 +38,16 @@ class ApiService extends Api{
         ExtractionPhase /*andThen*/
         //new PreprocessingPhase(xlangF, gencF)
 //        PrintTreePhase("Output of leon")
-    val pipelineInput = TemporaryInputPhase(ctx, (List(sourceCode), relativePathsToWebpageBuildingDSLFiles))
+    relativePathsToWebpageBuildingDSLFiles.foreach(pathToFile => serverReporter.report(Info, "Additional file provided to leon: " + pathToFile))
+    //Add a line importing the webpageBuildingDSL package to the source code string
+    val sourceCodeWithImport = WebpageBuildingDSLFilesPathsProvider.importLine + sys.props("line.separator") + sourceCode
+    val pipelineInput = TemporaryInputPhase(ctx, (List(sourceCodeWithImport), relativePathsToWebpageBuildingDSLFiles))
 
     case class PipelineRunResult(val msg: String, val programOption: Option[Program])
 
     def runPipeline(pipeline: Pipeline[List[String], Program], pipelineInput: List[String], leonContext: LeonContext) : PipelineRunResult = {
       try {
-        serverReporter.report(Info, "Running pipeline")
+        serverReporter.report(Info, "Running leon pipeline")
         val (context, program) = pipeline.run(leonContext,pipelineInput)
         PipelineRunResult("Succesful run", Some(program))
       } catch {

@@ -7,9 +7,14 @@ import scala.collection.mutable
   */
 class ServerReporter {
   private val messageQueue = mutable.Queue[SRMessage]()
+  var printReportsInConsole = false
 
   def report(severity: SRSeverity, rawMessage: String): Unit = {
-    messageQueue.enqueue(SRMessage(rawMessage, severity))
+    val srMessage = SRMessage(rawMessage, severity)
+    messageQueue.enqueue(srMessage)
+    if (printReportsInConsole) {
+      println(srMessage.messageToString)
+    }
   }
 
   def flushMessageQueue(whatToDoWithTheOutputString: String=>Unit) = {

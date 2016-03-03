@@ -14,38 +14,27 @@ import scala.collection.mutable.ListBuffer
   */
 object WebpageBuildingDSLFilesPathsProvider {
   private val relativePathToWebpageBuildingDSLPackage = "shared/src/main/scala/shared/webpageBuildingDSL"
-//  private val fileNamesList = List(
-//    "WebElement.scala",
-//    "WebPage.scala",
-//    "WebAttribute.scala"
-//  )
+
   private val nameOfTheFileOfThisClass = this.getClass.getSimpleName.dropRight(1)+".scala"
   private val relativePathToTheFileOfThisClass = relativePathToWebpageBuildingDSLPackage + "/" + nameOfTheFileOfThisClass
   private val relativePathToTheWarningFileOfTheWebpageBuildingDSLPackage = relativePathToWebpageBuildingDSLPackage + "/" + "Warning.txt"
-//  private val fileNamesListBis = {
-//    val webpagebuildingDSLFolder = new File(relativePathToWebpageBuildingDSLPackage)
-//    webpagebuildingDSLFolder.listFiles().filter(file => file.getName != nameOfTheFileOfThisClass)
-//  }
-//  fileNamesListBis.foreach(file => println(file.getName))
 
   val relativePathsToWebpageBuildingDSLFiles: ListBuffer[String] = {
     val l: ListBuffer[String]= ListBuffer()
     FileListingVisitor.doTheVisit(relativePathToWebpageBuildingDSLPackage, pathToFile => {l += pathToFile.toString})
     l.filter(string => (string != relativePathToTheFileOfThisClass) && (string != relativePathToTheWarningFileOfTheWebpageBuildingDSLPackage))
   }
-//  println("hey")
-//  relativePathsToWebpageBuildingDSLFilesBis.foreach(s => println(s))
 
-//  val relativePathsToWebpageBuildingDSLFiles = fileNamesList.map(fileName => relativePathToWebpageBuildingDSLPackage + "/" + fileName)
+  def importLine = {
+    "import shared.webpageBuildingDSL._"
+  }
 }
 
 //Converted from java code (http://www.javapractices.com/topic/TopicAction.do?Id=68)
 private object FileListingVisitor {
   def doTheVisit(root: String, whatToDoWithThePathsToFiles: Path => Unit){
-    //example of root: "C:\\test"
     val fileProcessor = new ProcessFile(whatToDoWithThePathsToFiles)
     Files.walkFileTree(Paths.get(root), fileProcessor)
-//    Files.walkFileTree(Paths.get(root), fileProcessor);
   }
 
   private final class ProcessFile(whatToDoWithThePathsToFiles: Path => Unit) extends SimpleFileVisitor[Path] {

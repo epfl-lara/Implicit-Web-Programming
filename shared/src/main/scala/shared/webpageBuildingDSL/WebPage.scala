@@ -7,7 +7,7 @@ package shared.webpageBuildingDSL
 sealed trait WebPage {
   val content: List[WebElement] = List()
 
-  val testString = "Coucou"
+  var testString = "Coucou"
 }
 
 case object ErrorWebPage extends WebPage {
