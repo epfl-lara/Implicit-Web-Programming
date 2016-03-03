@@ -1,0 +1,3 @@
+  * All the files present in this directory (recursively), excepted "Warning.txt" and "WebpageBuildingDSLFilesPathsProvider.scala" will be provided to leon.
+  * The val "relativePathToWebpageBuildingDSLPackage" from the "WebpageBuildingDSLFilesPathsProvider.scala" file has to be maintained correct.
+  * The "WebpageBuildingDSLFilesPathsProvider" file has to be kept at the root of the "webpageBuildingDSL" package.

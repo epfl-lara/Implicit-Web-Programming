@@ -24,7 +24,7 @@ class ApiService extends Api{
   }
 
   override def submitSourceCode(sourceCode: String): SourceCodeProcessingResult = {
-    val relativePathsToWebpageBuildingDSLFiles = WebpageBuildingDSLFilesPathsProvider.relativePathsToWebpageBuildingDSLFiles
+    val relativePathsToWebpageBuildingDSLFiles = WebpageBuildingDSLFilesPathsProvider.relativePathsToWebpageBuildingDSLFiles.toList
 
     val serverReporter = new ServerReporter
     //    SourceCodeManager.rewriteSourceCode(sourceCode, serverReporter)
