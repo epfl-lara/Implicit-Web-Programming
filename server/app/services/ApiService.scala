@@ -70,7 +70,7 @@ class ApiService extends Api{
     def executeProgramToGetTheGeneratedWebPageAndTheSourceMap(program: Program): WebPage = {
       //TODO: fill this, it should also return a sourceMap(to be defined)
 //      new WebPage
-      BlankWebPage
+      BlankWebPage(List())
     }
 
     runPipeline(pipeline, pipelineInput, ctx) match {

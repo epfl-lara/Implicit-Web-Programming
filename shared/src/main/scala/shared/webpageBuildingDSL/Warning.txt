@@ -1,3 +1,8 @@
   * All the files present in this directory (recursively), excepted "Warning.txt" and "WebpageBuildingDSLFilesPathsProvider.scala" will be provided to leon.
   * The val "relativePathToWebpageBuildingDSLPackage" from the "WebpageBuildingDSLFilesPathsProvider.scala" file has to be maintained correct.
   * The "WebpageBuildingDSLFilesPathsProvider" file has to be kept at the root of the "webpageBuildingDSL" package.
+
+  * Pour leon, il faut pas mettre de val dans les classes qu'on donne a leon
+  * Leon: Ne pas utiliser de class sans "case"
+  * Leon: N pas utiliser de classe abstraite/Trait qui n'ont pas de descendant
+  * Leon ne reconnait pas les List de scala
