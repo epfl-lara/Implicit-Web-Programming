@@ -18,7 +18,7 @@ lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
 //  (resourceManaged in sharedJVM in Compile).value /
 //    ((moduleName in fastOptJS).value + "-fastopt.js"))
 
-lazy val leonSource = RootProject(uri("git://github.com/epfl-lara/leon.git"))
+lazy val leonSource = RootProject(file("leon"))
 
 // use eliding to drop some debug code in the production build
 lazy val elideOptions = settingKey[Seq[String]]("Set limit for elidable functions")

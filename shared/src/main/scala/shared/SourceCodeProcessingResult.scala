@@ -1,6 +1,6 @@
 package shared
 
-import shared.webpageBuildingDSL.WebPage
+import webpageBuildingDSL.WebPage
 
 /**
   * Created by dupriez on 2/25/16.
