@@ -1,4 +1,4 @@
-package webpageBuildingDSL
+package shared.webpageBuildingDSL
 
 import java.io.File
 import java.io.File
@@ -10,10 +10,10 @@ import scala.collection.mutable.ListBuffer
 /**
   * Created by dupriez on 3/1/16.
   * The val "relativePathToWebpageBuildingDSLPackage" has to be maintained correct.
-  * This file has to be kept at the root of the "webpageBuildingDSL" package.
+  * This file has to be kept at the root of the "shared.webpageBuildingDSL" package.
   */
 object WebpageBuildingDSLFilesPathsProvider {
-  private val relativePathToWebpageBuildingDSLPackage = "server/app/webpageBuildingDSL"
+  private val relativePathToWebpageBuildingDSLPackage = "shared/src/main/scala/shared/webpageBuildingDSL"
 
   private val nameOfTheFileOfThisClass = this.getClass.getSimpleName.dropRight(1)+".scala"
   private val relativePathToTheFileOfThisClass = relativePathToWebpageBuildingDSLPackage + "/" + nameOfTheFileOfThisClass
@@ -26,7 +26,7 @@ object WebpageBuildingDSLFilesPathsProvider {
   }
 
   def importLine = {
-    "import webpageBuildingDSL._"
+    "import shared.webpageBuildingDSL._"
   }
 }
 

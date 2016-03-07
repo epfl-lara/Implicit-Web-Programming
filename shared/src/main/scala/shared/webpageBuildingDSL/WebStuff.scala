@@ -1,4 +1,4 @@
-package webpageBuildingDSL
+package shared.webpageBuildingDSL
 
 /**
   * Created by dupriez on 3/4/16.

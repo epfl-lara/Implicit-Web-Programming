@@ -5,7 +5,7 @@ import leon.{LeonContext, LeonFatalError, DefaultReporter, Pipeline}
 import leon.frontends.scalac.{ExtractionPhase, ClassgenPhase}
 import leon.purescala.Definitions.Program
 import leon.utils.{NoPosition, TemporaryInputPhase, PrintTreePhase}
-import webpageBuildingDSL.{BlankWebPage, WebPage, ErrorWebPage, WebpageBuildingDSLFilesPathsProvider}
+import shared.webpageBuildingDSL.{BlankWebPage, WebPage, ErrorWebPage, WebpageBuildingDSLFilesPathsProvider}
 import trash.manipulatedFiles.SourceCodeManager
 import serverReporter.{Info, ServerReporter}
 import shared.{SourceCodeProcessingResult, Api}
@@ -39,7 +39,7 @@ class ApiService extends Api{
         //new PreprocessingPhase(xlangF, gencF)
 //        PrintTreePhase("Output of leon")
     relativePathsToWebpageBuildingDSLFiles.foreach(pathToFile => serverReporter.report(Info, "Additional file provided to leon: " + pathToFile))
-    //Add a line importing the webpageBuildingDSL package to the source code string
+    //Add a line importing the shared.webpageBuildingDSL package to the source code string
     val sourceCodeWithImport = WebpageBuildingDSLFilesPathsProvider.importLine + sys.props("line.separator") + sourceCode
     val pipelineInput = TemporaryInputPhase(ctx, (List(sourceCodeWithImport), relativePathsToWebpageBuildingDSLFiles))
 
