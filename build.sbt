@@ -20,6 +20,26 @@ lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
 
 lazy val leonSource = RootProject(file("leon"))
 
+//lazy val leonLibraryCollection: Project = (project in file("leon/library/collection"))
+lazy val leonLibrary = (project in file("leon/library"))
+  .settings(
+      name := "leonLibrary",
+      version := Settings.version,
+      scalaVersion := Settings.versions.scala,
+      scalacOptions ++= Settings.scalacOptions
+  )
+  .dependsOn(leonSource)
+
+lazy val webDSL: Project = (project in file("leon/library/webDSL"))
+  .settings(
+      name := "webDSL",
+      version := Settings.version,
+      scalaVersion := Settings.versions.scala,
+      scalacOptions ++= Settings.scalacOptions
+  )
+  .dependsOn(leonLibrary)
+//lazy val webDSL = RootProject(file("leon/library/webDSL")).dependsOn(leonLibraryCollection)
+
 // use eliding to drop some debug code in the production build
 lazy val elideOptions = settingKey[Seq[String]]("Set limit for elidable functions")
 
@@ -80,7 +100,8 @@ lazy val server = (project in file("server"))
 //  .disablePlugins(PlayLayoutPlugin) // use the standard directory layout instead of Play's custom
   .aggregate(clients.map(projectToRef): _*)
   .dependsOn(sharedJVM)
-    .dependsOn(leonSource)
+  .dependsOn(leonSource)
+  .dependsOn(webDSL)
 
 // Command for building a release
 lazy val ReleaseCmd = Command.command("release") {
@@ -102,3 +123,5 @@ onLoad in Global := (Command.process("project server", _: State)) compose (onLoa
 // Play provides two styles of routers, one expects its actions to be injected, the
 // other, legacy style, accesses its actions statically.
 routesGenerator := InjectedRoutesGenerator
+
+

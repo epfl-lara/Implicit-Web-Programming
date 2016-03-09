@@ -38,10 +38,17 @@ class ApiService extends Api{
         ExtractionPhase /*andThen*/
         //new PreprocessingPhase(xlangF, gencF)
 //        PrintTreePhase("Output of leon")
-    relativePathsToWebpageBuildingDSLFiles.foreach(pathToFile => serverReporter.report(Info, "Additional file provided to leon: " + pathToFile))
+
+//    Commented to test the webpageDSLBis
+//    relativePathsToWebpageBuildingDSLFiles.foreach(pathToFile => serverReporter.report(Info, "Additional file provided to leon: " + pathToFile))
+
     //Add a line importing the shared.webpageBuildingDSL package to the source code string
-    val sourceCodeWithImport = WebpageBuildingDSLFilesPathsProvider.importLine + sys.props("line.separator") + sourceCode
-    val pipelineInput = TemporaryInputPhase(ctx, (List(sourceCodeWithImport), relativePathsToWebpageBuildingDSLFiles))
+    //    Partially Commented to test the webpageDSLBis
+    val sourceCodeWithImport = /*WebpageBuildingDSLFilesPathsProvider.importLine + sys.props("line.separator") +*/ sourceCode
+
+//    val pipelineInput = TemporaryInputPhase(ctx, (List(sourceCodeWithImport), relativePathsToWebpageBuildingDSLFiles))
+    // Swap to test the webpageDSLBis
+    val pipelineInput = TemporaryInputPhase(ctx, (List(sourceCodeWithImport), List()))
 
     case class PipelineRunResult(val msg: String, val programOption: Option[Program])
 
