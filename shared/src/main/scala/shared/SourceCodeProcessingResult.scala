@@ -1,4 +1,5 @@
 package shared
+import webDSL._
 
 /**
   * Created by dupriez on 2/25/16.

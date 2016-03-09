@@ -5,7 +5,7 @@ import leon.{LeonContext, LeonFatalError, DefaultReporter, Pipeline}
 import leon.frontends.scalac.{ExtractionPhase, ClassgenPhase}
 import leon.purescala.Definitions.Program
 import leon.utils.{NoPosition, TemporaryInputPhase, PrintTreePhase}
-import shared.webpageBuildingDSL.{BlankWebPage, WebPage, ErrorWebPage, WebpageBuildingDSLFilesPathsProvider}
+import webDSL.{BlankWebPage, WebPage, ErrorWebPage}
 import trash.manipulatedFiles.SourceCodeManager
 import serverReporter.{Info, ServerReporter}
 import shared.{SourceCodeProcessingResult, Api}
@@ -24,7 +24,7 @@ class ApiService extends Api{
   }
 
   override def submitSourceCode(sourceCode: String): SourceCodeProcessingResult = {
-    val relativePathsToWebpageBuildingDSLFiles = WebpageBuildingDSLFilesPathsProvider.relativePathsToWebpageBuildingDSLFiles.toList
+    //val relativePathsToWebpageBuildingDSLFiles = WebpageBuildingDSLFilesPathsProvider.relativePathsToWebpageBuildingDSLFiles.toList
 
     val serverReporter = new ServerReporter
     serverReporter.printReportsInConsole = true

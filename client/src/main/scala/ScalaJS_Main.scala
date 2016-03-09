@@ -5,6 +5,7 @@ import japgolly.scalajs.react.{ReactDOM, Callback, CallbackTo}
 import org.scalajs.dom
 import dom.document
 import shared.Api
+import webDSL._
 
 import scalatags.JsDom.all. _
 
@@ -43,7 +44,14 @@ object ScalaJS_Main extends js.JSApp {
         println("submit source code change")
         AjaxClient[Api].submitSourceCode(AceEditor.getEditorValue).call().onComplete {
           case Failure(exception) => {println("error during submission of the source code: " + exception.getMessage)}
-          case Success(sourceCodeProcessingResult) => {println("source code submission success"); println(sourceCodeProcessingResult.generatedHtml.testString)}
+          case Success(sourceCodeProcessingResult) => {println("source code submission success"); 
+		  sourceCodeProcessingResult.generatedHtml match {
+		  case BlankWebPage(l) => println("... " + l.size)
+		  case ErrorWebPage => println("Error")
+		  }
+		  
+		  //println(sourceCodeProcessingResult.generatedHtml.testString)
+		  }
         }
       }
     }
