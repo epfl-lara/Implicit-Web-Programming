@@ -1,6 +1,5 @@
 object Main {
     def main() {
         val w = BlankWebPage
-        w.testString = "This is a blank webpage"
     }
 }
