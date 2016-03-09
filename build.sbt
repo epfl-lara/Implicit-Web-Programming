@@ -6,7 +6,8 @@ lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
   .settings(
     scalaVersion := Settings.versions.scala,
     libraryDependencies ++= Settings.sharedDependencies.value,
-	unmanagedSourceDirectories in Compile += baseDirectory.value / "../leon/library"
+//	unmanagedSourceDirectories in Compile += baseDirectory.value / "../leon/library"
+    scalaSource in Compile := file("../leon/library")
   )
   // set up settings specific to the JS project
   .jsConfigure(_ enablePlugins ScalaJSPlay)

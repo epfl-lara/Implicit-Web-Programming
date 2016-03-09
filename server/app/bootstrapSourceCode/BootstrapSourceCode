@@ -1,5 +1,5 @@
 object Main {
     def main() {
-        val w = BlankWebPage
+        val w = webDSL.BlankWebPage
     }
 }

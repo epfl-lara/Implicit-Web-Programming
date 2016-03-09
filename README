@@ -2,3 +2,9 @@ This is your new Play application
 =================================
 
 This file will be packaged with your application, when using `activator dist`.
+
+#To pull the latest version
+> git pull
+> git submodule update --recursive
+
+(The second line is there to get the latest version of leon (on my personal fork))
