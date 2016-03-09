@@ -5,7 +5,8 @@ import sbt.Project.projectToRef
 lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
   .settings(
     scalaVersion := Settings.versions.scala,
-    libraryDependencies ++= Settings.sharedDependencies.value
+    libraryDependencies ++= Settings.sharedDependencies.value,
+	unmanagedSourceDirectories in Compile += baseDirectory.value / "../leon/library"
   )
   // set up settings specific to the JS project
   .jsConfigure(_ enablePlugins ScalaJSPlay)
@@ -28,16 +29,15 @@ lazy val leonLibrary = (project in file("leon/library"))
       scalaVersion := Settings.versions.scala,
       scalacOptions ++= Settings.scalacOptions
   )
-  .dependsOn(leonSource)
 
-lazy val webDSL: Project = (project in file("leon/library/webDSL"))
+/*lazy val webDSL: Project = (project in file("leon/library/webDSL"))
   .settings(
       name := "webDSL",
       version := Settings.version,
       scalaVersion := Settings.versions.scala,
       scalacOptions ++= Settings.scalacOptions
   )
-  .dependsOn(leonLibrary)
+  .dependsOn(leonLibrary)*/
 //lazy val webDSL = RootProject(file("leon/library/webDSL")).dependsOn(leonLibraryCollection)
 
 // use eliding to drop some debug code in the production build
@@ -101,7 +101,6 @@ lazy val server = (project in file("server"))
   .aggregate(clients.map(projectToRef): _*)
   .dependsOn(sharedJVM)
   .dependsOn(leonSource)
-  .dependsOn(webDSL)
 
 // Command for building a release
 lazy val ReleaseCmd = Command.command("release") {
