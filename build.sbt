@@ -27,7 +27,8 @@ lazy val leonLibrary = (project in file("leon/library"))
       name := "leonLibrary",
       version := Settings.version,
       scalaVersion := Settings.versions.scala,
-      scalacOptions ++= Settings.scalacOptions
+      scalacOptions ++= Settings.scalacOptions,
+    scalaSource in Compile := file("leon/library")
   )
 
 /*lazy val webDSL: Project = (project in file("leon/library/webDSL"))
