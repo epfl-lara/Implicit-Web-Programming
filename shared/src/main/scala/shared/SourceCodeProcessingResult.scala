@@ -1,5 +1,6 @@
 package shared
-import webDSL_Client._
+
+import leonLibraryInShared.webDSL_Client.webDescription_Client.WebPage_Client
 
 /**
   * Created by dupriez on 2/25/16.

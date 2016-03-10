@@ -1,4 +1,4 @@
-package webDSL_Client
+package leonLibraryInShared.webDSL_Client.webDescription_Client
 
 /**
   * Created by dupriez on 3/1/16.

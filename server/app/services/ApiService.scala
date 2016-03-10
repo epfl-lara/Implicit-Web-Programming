@@ -5,7 +5,7 @@ import leon.{LeonContext, LeonFatalError, DefaultReporter, Pipeline}
 import leon.frontends.scalac.{ExtractionPhase, ClassgenPhase}
 import leon.purescala.Definitions.Program
 import leon.utils.{NoPosition, TemporaryInputPhase, PrintTreePhase}
-import webDSL_Client._
+import leonLibraryInShared.webDSL_Client.webDescription_Client.{BlankWebPage_Client, ErrorWebPage_Client, WebPage_Client}
 import trash.manipulatedFiles.SourceCodeManager
 import serverReporter.{Info, ServerReporter}
 import shared.{SourceCodeProcessingResult, Api}
