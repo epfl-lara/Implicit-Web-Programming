@@ -7,4 +7,17 @@ This file will be packaged with your application, when using `activator dist`.
 > git pull
 > git submodule update --recursive
 
-(The second line is there to get the latest version of leon (on my personal fork))
+(The second line is there to get the latest version of leon (from my personal fork(so that it contains the webDSL) of the original leon))
+
+#Duplication
+the "library" folder of leon (containing the webDSL) is duplicated. It is present both in the "leon" folder (the gitsubmodule linked to my personal fork of leon)
+and in the "shared" folder. The main reason for this is that the webDSL package had to be duplicated, and this package has:
+ * To be present in the "leon/library folder", for leon to be able to compile/execute programs using it
+ * To be present in the "shared/src/main/scala" folder, for scalajs to be able to use it on the client
+(And scalajs cannot use source code that is outside of the "shared" folder, for unclear reasons).
+
+The main differences between the 2 packages are:
+ * the one from the "leon/library" folder is called "webDSL_Leon", while the one from "shared" is called "webDSL_Client"
+ * webDSL_Leon uses leon.collection.List instead of scala.List because leon cannot understand scala.List
+ * webDSL_Client uses scala.List because leon.collection.List does not appear to be pickable (~= serializable) by boopickle.
+ * all the names from the webDSL_Client package are suffixed with "_Client" to avoid confusion.

@@ -5,7 +5,7 @@ import leon.{LeonContext, LeonFatalError, DefaultReporter, Pipeline}
 import leon.frontends.scalac.{ExtractionPhase, ClassgenPhase}
 import leon.purescala.Definitions.Program
 import leon.utils.{NoPosition, TemporaryInputPhase, PrintTreePhase}
-import webDSL.{BlankWebPage, WebPage, ErrorWebPage}
+import webDSL_Client._
 import trash.manipulatedFiles.SourceCodeManager
 import serverReporter.{Info, ServerReporter}
 import shared.{SourceCodeProcessingResult, Api}
@@ -74,16 +74,16 @@ class ApiService extends Api{
       }
     }
 
-    def executeProgramToGetTheGeneratedWebPageAndTheSourceMap(program: Program): WebPage = {
+    def executeProgramToGetTheGeneratedWebPageAndTheSourceMap(program: Program): WebPage_Client = {
       //TODO: fill this, it should also return a sourceMap(to be defined)
 //      new WebPage
-      BlankWebPage(List())
+      BlankWebPage_Client(List())
     }
 
     runPipeline(pipeline, pipelineInput, ctx) match {
       case PipelineRunResult(msg, None) => {
         serverReporter.report(Info, msg)
-        SourceCodeProcessingResult(success = false, Some("error when running leon pipeline: "+msg), ErrorWebPage)
+        SourceCodeProcessingResult(success = false, Some("error when running leon pipeline: "+msg), ErrorWebPage_Client)
       }
       case PipelineRunResult(msg, Some(program)) => {
         serverReporter.report(Info, msg)
