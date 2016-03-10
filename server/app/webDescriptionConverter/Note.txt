@@ -1,0 +1,1 @@
+Purpose of this package: Convert an object from webDescription_Leon to a similar object from webDescription_Client

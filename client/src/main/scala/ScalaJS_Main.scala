@@ -46,8 +46,8 @@ object ScalaJS_Main extends js.JSApp {
           case Failure(exception) => {println("error during submission of the source code: " + exception.getMessage)}
           case Success(sourceCodeProcessingResult) => {println("source code submission success")
 		  sourceCodeProcessingResult.generatedHtml match {
-		  case BlankWebPage_Client(l) => {println("... " + l.size)}
-		  case ErrorWebPage_Client => println("Error")
+		  case BlankWebPage(l) => {println("... " + l.size)}
+		  case ErrorWebPage => println("Error")
 		  }
 		  
 		  //println(sourceCodeProcessingResult.generatedHtml.testString)
