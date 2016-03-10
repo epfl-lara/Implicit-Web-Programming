@@ -21,3 +21,7 @@ The main differences between the 2 packages are:
  * webDSL_Leon uses leon.collection.List instead of scala.List because leon cannot understand scala.List
  * webDSL_Client uses scala.List because leon.collection.List does not appear to be pickable (~= serializable) by boopickle.
  * all the names from the webDSL_Client package are suffixed with "_Client" to avoid confusion.
+
+The fact that the whole library of leon is duplicated, and not just the webDSL part, is not really necessary for now, since webDSL_Client doesn't
+use the leon library. At some point, it may be used to synthesize/verify the project code present in the shared folder,
+if it is written in purescala (i.e. something that leon can read). It's purpose would be a development assistant.
