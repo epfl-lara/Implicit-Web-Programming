@@ -5,7 +5,7 @@ import sbt.Project.projectToRef
 lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
   .settings(
     scalaVersion := Settings.versions.scala,
-    libraryDependencies ++= Settings.sharedDependencies.value,
+    libraryDependencies ++= Settings.sharedDependencies.value//,
 //	unmanagedSourceDirectories in Compile += baseDirectory.value / "../leon/library"
 //    scalaSource in Compile := file("../leon/library")
   )
