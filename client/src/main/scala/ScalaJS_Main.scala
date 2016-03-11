@@ -44,14 +44,15 @@ object ScalaJS_Main extends js.JSApp {
         println("submit source code change")
         AjaxClient[Api].submitSourceCode(AceEditor.getEditorValue).call().onComplete {
           case Failure(exception) => {println("error during submission of the source code: " + exception.getMessage)}
-          case Success(sourceCodeProcessingResult) => {println("source code submission success")
-		  sourceCodeProcessingResult.generatedHtml match {
-		  case BlankWebPage(l) => {println("... " + l.size)}
-		  case ErrorWebPage => println("Error")
-		  }
-		  
-		  //println(sourceCodeProcessingResult.generatedHtml.testString)
-		  }
+          case Success(sourceCodeProcessingResult) => {
+            println("source code submission success")
+            println("received a webpage")
+//            println(
+//              s"""
+//                |received a WebPage
+//                | size of the list: ${sourceCodeProcessingResult.generatedHtml.attributesAndSons.size}
+//              """.stripMargin)
+		      }
         }
       }
     }

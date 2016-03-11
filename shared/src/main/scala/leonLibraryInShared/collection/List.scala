@@ -567,7 +567,6 @@ object List {
   
   //implicit def picklerList1[T]: Pickler[List[T]] = generatePickler[List[T]]
   
-  
   @ignore
   def apply[T](elems: T*): List[T] = {
     var l: List[T] = Nil[T]()
