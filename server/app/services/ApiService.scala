@@ -6,7 +6,6 @@ import leon.frontends.scalac.{ExtractionPhase, ClassgenPhase}
 import leon.purescala.Definitions.Program
 import leon.utils.{NoPosition, TemporaryInputPhase, PrintTreePhase}
 import leonLibraryInShared.webDSL_Client.webDescription_Client.{WebPage}
-import trash.manipulatedFiles.SourceCodeManager
 import serverReporter.{Info, ServerReporter}
 import shared.{SourceCodeProcessingResult, Api}
 
@@ -76,7 +75,6 @@ class ApiService extends Api{
 
     def executeProgramToGetTheGeneratedWebPageAndTheSourceMap(program: Program): /*Option[*/WebPage/*]*/ = {
       //TODO: fill this, it should also return a sourceMap(to be defined)
-//      new WebPage
       /*Some(*/WebPage(List(), List())/*)*/
     }
 

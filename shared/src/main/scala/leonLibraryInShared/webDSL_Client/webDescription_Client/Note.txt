@@ -1,2 +1,4 @@
 TODO: Hell breaks loose when attempting to pass an Option[WebPage] to the client, while boopickle is supposedly able to serialise them...
 TODO: ...Would be cleaner for the client-server interactions to use Option types instead of boolean indicating whether the value should be considered.
+
+Note: boopickle can handle recursive composite types, but with Seq, not List

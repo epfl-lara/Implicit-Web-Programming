@@ -56,6 +56,7 @@ object ProgramEvaluator {
 
   def convertWebPageExprToClientWebPage(webPageExpr: Expr, program: Program, sReporter: ServerReporter): Option[WebPage] = {
     Some(WebPage(List(), List()))
+
     //    case class ExceptionDuringConversion(msg:String) extends Exception
 
 //    sReporter.report(Info, "Starting conversion of the leon Expr returned by the submitted program to a WebPage (built on webDSL_Client)...")
