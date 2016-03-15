@@ -1,13 +1,22 @@
 import sbt.Keys._
 import sbt.Project.projectToRef
 
+/**
+  * For debugging scalajs:
+  * * To check that the paths to the unmanagedSourceDirectories are correct:
+  * > show sharedJS/compile:unmanagedSourceDirectories
+  * * To check the exact set of .scala files that are used.
+  * > show sharedJS/compile:sources
+  */
+
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
   .settings(
     scalaVersion := Settings.versions.scala,
-    libraryDependencies ++= Settings.sharedDependencies.value//,
-//	unmanagedSourceDirectories in Compile += baseDirectory.value / "../leon/library"
-//    scalaSource in Compile := file("../leon/library")
+    libraryDependencies ++= Settings.sharedDependencies.value,
+//	unmanagedSourceDirectories in Compile += baseDirectory.value / "../../leon/library",
+//    scalaSource in Compile := file("../../leon/library")
+    scalaSource in Compile := baseDirectory.value / "../../leon/library"
   )
   // set up settings specific to the JS project
   .jsConfigure(_ enablePlugins ScalaJSPlay)
@@ -29,7 +38,8 @@ lazy val leonLibrary = (project in file("leon/library"))
       version := Settings.version,
       scalaVersion := Settings.versions.scala,
       scalacOptions ++= Settings.scalacOptions,
-      scalaSource in Compile := file("leon/library")
+      scalaSource in Compile := file("leon/library"),
+      libraryDependencies += "me.chrons" %%% "boopickle" % "1.1.0"
   )
 
 /*lazy val webDSL: Project = (project in file("leon/library/webDSL"))
@@ -103,6 +113,7 @@ lazy val server = (project in file("server"))
   .aggregate(clients.map(projectToRef): _*)
   .dependsOn(sharedJVM)
   .dependsOn(leonSource)
+  .dependsOn(leonLibrary)
 
 // Command for building a release
 lazy val ReleaseCmd = Command.command("release") {

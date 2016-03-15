@@ -5,7 +5,7 @@ import leon.evaluators.{EvaluationResults, AbstractEvaluator}
 import leon.purescala.Definitions.{CaseClassDef, Program}
 import leon.purescala.Expressions.{CaseClass, FunctionInvocation, Expr}
 import leon.purescala.Types.CaseClassType
-import leonLibraryInShared.webDSL_Client.webDescription_Client._
+import webDSL.webDescription._
 import serverReporter._
 
 /**
@@ -55,7 +55,7 @@ object ProgramEvaluator {
   }
 
   def convertWebPageExprToClientWebPage(webPageExpr: Expr, program: Program, sReporter: ServerReporter): Option[WebPage] = {
-    Some(WebPage(List(), List()))
+    Some(WebPage(leon.collection.List()))
 
     //    case class ExceptionDuringConversion(msg:String) extends Exception
 

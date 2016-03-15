@@ -1,6 +1,6 @@
 package programEvaluator
 
-import leonLibraryInShared.webDSL_Client.webDescription_Client.WebPage
+import webDSL.webDescription._
 
 /**
   * Created by dupriez on 3/10/16.
