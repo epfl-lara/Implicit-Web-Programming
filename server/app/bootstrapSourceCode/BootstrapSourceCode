@@ -1,5 +1,5 @@
 import leon.collection._
-import webDSL.webDescription._
+import leon.webDSL.webDescription._
 
 object Main {
     def main() {

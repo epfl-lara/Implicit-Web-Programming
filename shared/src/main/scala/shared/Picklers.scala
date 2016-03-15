@@ -1,7 +1,7 @@
 package shared
 import boopickle.Default._
 import boopickle.PicklerHelper
-import webDSL.webDescription._
+import leon.webDSL.webDescription._
 
 object Picklers extends PicklerHelper {
   private val consCode = 1

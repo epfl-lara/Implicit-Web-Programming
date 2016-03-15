@@ -5,7 +5,7 @@ import leon.evaluators.{EvaluationResults, AbstractEvaluator}
 import leon.purescala.Definitions.{CaseClassDef, Program}
 import leon.purescala.Expressions.{CaseClass, FunctionInvocation, Expr}
 import leon.purescala.Types.CaseClassType
-import webDSL.webDescription._
+import leon.webDSL.webDescription._
 import serverReporter._
 
 /**

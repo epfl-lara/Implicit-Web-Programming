@@ -5,7 +5,7 @@ import japgolly.scalajs.react.{ReactDOM, Callback, CallbackTo}
 import org.scalajs.dom
 import dom.document
 import shared.Api
-import webDSL.webDescription._
+import leon.webDSL.webDescription._
 
 import scalatags.JsDom.all. _
 
