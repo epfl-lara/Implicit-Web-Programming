@@ -1,13 +1,22 @@
 import sbt.Keys._
 import sbt.Project.projectToRef
 
+/**
+  * For debugging scalajs:
+  * * To check that the paths to the unmanagedSourceDirectories are correct:
+  * > show sharedJS/compile:unmanagedSourceDirectories
+  * * To check the exact set of .scala files that are used.
+  * > show sharedJS/compile:sources
+  */
+
 // a special crossProject for configuring a JS/JVM/shared structure
 lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
   .settings(
     scalaVersion := Settings.versions.scala,
     libraryDependencies ++= Settings.sharedDependencies.value,
-//	unmanagedSourceDirectories in Compile += baseDirectory.value / "../leon/library"
-    scalaSource in Compile := file("../leon/library")
+//	unmanagedSourceDirectories in Compile += baseDirectory.value / "../../leon/library",
+//    scalaSource in Compile := file("../../leon/library")
+    scalaSource in Compile := baseDirectory.value / "../../leon/library"
   )
   // set up settings specific to the JS project
   .jsConfigure(_ enablePlugins ScalaJSPlay)
@@ -23,14 +32,14 @@ lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
 lazy val leonSource = RootProject(file("leon"))
 
 //lazy val leonLibraryCollection: Project = (project in file("leon/library/collection"))
-lazy val leonLibrary = (project in file("leon/library"))
+/*lazy val leonLibrary = (project in file("leon/library"))
   .settings(
       name := "leonLibrary",
       version := Settings.version,
       scalaVersion := Settings.versions.scala,
       scalacOptions ++= Settings.scalacOptions,
       scalaSource in Compile := file("leon/library")
-  )
+  )*/
 
 /*lazy val webDSL: Project = (project in file("leon/library/webDSL"))
   .settings(

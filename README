@@ -24,4 +24,11 @@ The main differences between the 2 packages are:
 
 The fact that the whole library of leon is duplicated, and not just the webDSL part, is not really necessary for now, since webDSL_Client doesn't
 use the leon library. At some point, it may be used to synthesize/verify the project code present in the shared folder,
-if it is written in purescala (i.e. something that leon can read). It's purpose would be a development assistant.
+if it is written in purescala (i.e. something that leon can read). It's purpose would be a development assistant/verifier for this project.
+
+Possible improvement:
+The duplication of webDSL could be avoided by:
+* Making the leon.collection.List serializable by boopickle (Don't really know how to proceed)
+* Replacing the scala.List by leon.collection.List in the webDSL_Client
+* Tell leon to use the client duplicate of the leon library (containing webDSL_Client) instead of the leon/library folder.
+* Suppress webDSL_Leon

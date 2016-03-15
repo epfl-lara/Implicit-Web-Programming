@@ -5,7 +5,7 @@ import japgolly.scalajs.react.{ReactDOM, Callback, CallbackTo}
 import org.scalajs.dom
 import dom.document
 import shared.Api
-import leonLibraryInShared.webDSL_Client.webDescription_Client._
+import webDSL.webDescription._
 
 import scalatags.JsDom.all. _
 
@@ -20,10 +20,13 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 /** Imports for using AjaxClient **/
 import scala.concurrent.ExecutionContext.Implicits.global
 import boopickle.Default._
+import boopickle.PicklerHelper
 import autowire._
 /** **/
 
 object ScalaJS_Main extends js.JSApp {
+  import shared.MyCustomPicklers._
+
   def main(): Unit = {
     //    println("method main of ScalaJSExample is running")
     //    dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
@@ -44,14 +47,16 @@ object ScalaJS_Main extends js.JSApp {
         println("submit source code change")
         AjaxClient[Api].submitSourceCode(AceEditor.getEditorValue).call().onComplete {
           case Failure(exception) => {println("error during submission of the source code: " + exception.getMessage)}
-          case Success(sourceCodeProcessingResult) => {println("source code submission success")
-		  sourceCodeProcessingResult.generatedHtml match {
-		  case BlankWebPage(l) => {println("... " + l.size)}
-		  case ErrorWebPage => println("Error")
-		  }
-		  
-		  //println(sourceCodeProcessingResult.generatedHtml.testString)
-		  }
+          case Success(sourceCodeProcessingResult) => {
+            println("source code submission success")
+            println("received a webpage")
+            println(sourceCodeProcessingResult.generatedHtml.leonList)
+//            println(
+//              s"""
+//                |received a WebPage
+//                | size of the list: ${sourceCodeProcessingResult.generatedHtml.attributesAndSons.size}
+//              """.stripMargin)
+		      }
         }
       }
     }
