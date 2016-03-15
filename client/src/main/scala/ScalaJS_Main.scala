@@ -20,10 +20,13 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 /** Imports for using AjaxClient **/
 import scala.concurrent.ExecutionContext.Implicits.global
 import boopickle.Default._
+import boopickle.PicklerHelper
 import autowire._
 /** **/
 
 object ScalaJS_Main extends js.JSApp {
+  import shared.MyCustomPicklers._
+
   def main(): Unit = {
     //    println("method main of ScalaJSExample is running")
     //    dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
@@ -47,6 +50,7 @@ object ScalaJS_Main extends js.JSApp {
           case Success(sourceCodeProcessingResult) => {
             println("source code submission success")
             println("received a webpage")
+            println(sourceCodeProcessingResult.generatedHtml.leonList)
 //            println(
 //              s"""
 //                |received a WebPage

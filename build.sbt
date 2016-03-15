@@ -32,15 +32,14 @@ lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
 lazy val leonSource = RootProject(file("leon"))
 
 //lazy val leonLibraryCollection: Project = (project in file("leon/library/collection"))
-lazy val leonLibrary = (project in file("leon/library"))
+/*lazy val leonLibrary = (project in file("leon/library"))
   .settings(
       name := "leonLibrary",
       version := Settings.version,
       scalaVersion := Settings.versions.scala,
       scalacOptions ++= Settings.scalacOptions,
-      scalaSource in Compile := file("leon/library"),
-      libraryDependencies += "me.chrons" %%% "boopickle" % "1.1.0"
-  )
+      scalaSource in Compile := file("leon/library")
+  )*/
 
 /*lazy val webDSL: Project = (project in file("leon/library/webDSL"))
   .settings(
@@ -113,7 +112,6 @@ lazy val server = (project in file("server"))
   .aggregate(clients.map(projectToRef): _*)
   .dependsOn(sharedJVM)
   .dependsOn(leonSource)
-  .dependsOn(leonLibrary)
 
 // Command for building a release
 lazy val ReleaseCmd = Command.command("release") {
