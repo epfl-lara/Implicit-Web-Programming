@@ -1,8 +1,8 @@
 import leon.collection._
-import webDSL_Leon.webDescription_Leon._
+import webDSL.webDescription._
 
 object Main {
     def main() {
-        val w = BlankWebPage(List())
+        val w = WebPage(List(), List())
     }
 }

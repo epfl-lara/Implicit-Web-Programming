@@ -25,7 +25,7 @@ import autowire._
 /** **/
 
 object ScalaJS_Main extends js.JSApp {
-  import shared.MyCustomPicklers._
+  import shared.Picklers._
 
   def main(): Unit = {
     //    println("method main of ScalaJSExample is running")
@@ -50,7 +50,7 @@ object ScalaJS_Main extends js.JSApp {
           case Success(sourceCodeProcessingResult) => {
             println("source code submission success")
             println("received a webpage")
-            println(sourceCodeProcessingResult.generatedHtml.leonList)
+            println(sourceCodeProcessingResult.generatedHtml.sons)
 //            println(
 //              s"""
 //                |received a WebPage

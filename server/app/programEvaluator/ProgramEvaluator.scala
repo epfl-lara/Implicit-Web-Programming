@@ -55,7 +55,7 @@ object ProgramEvaluator {
   }
 
   def convertWebPageExprToClientWebPage(webPageExpr: Expr, program: Program, sReporter: ServerReporter): Option[WebPage] = {
-    Some(WebPage(leon.collection.List()))
+    Some(WebPage(leon.collection.List(), leon.collection.List()))
 
     //    case class ExceptionDuringConversion(msg:String) extends Exception
 

@@ -1,8 +1,9 @@
 package shared
 import boopickle.Default._
 import boopickle.PicklerHelper
+import webDSL.webDescription._
 
-object MyCustomPicklers extends PicklerHelper {
+object Picklers extends PicklerHelper {
   private val consCode = 1
   private val nilCode = 2
 
@@ -40,4 +41,7 @@ object MyCustomPicklers extends PicklerHelper {
       }
     }
   }
+
+  implicit val webElementPickler = compositePickler[WebElement]
+  webElementPickler.addConcreteType[TestWebElement1]
 }

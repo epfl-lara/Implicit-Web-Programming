@@ -20,7 +20,7 @@ object Router extends autowire.Server[ByteBuffer, Pickler, Pickler] {
 }
 
 object Application extends Controller {
-  import shared.MyCustomPicklers._
+  import shared.Picklers._
   val apiService = new ApiService()
   def autowireApi(path: String) = Action.async(parse.raw) {
     implicit request =>
