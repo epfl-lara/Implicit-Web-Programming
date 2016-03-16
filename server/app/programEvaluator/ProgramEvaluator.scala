@@ -7,24 +7,25 @@ import leon.purescala.Expressions.{CaseClass, FunctionInvocation, Expr}
 import leon.purescala.Types.CaseClassType
 import leon.webDSL.webDescription._
 import serverReporter._
+import shared.SourceCodeSubmissionResult
 
 /**
   * Created by dupriez on 3/10/16.
   */
 object ProgramEvaluator {
   val fullNameOfTheFunctionToEvaluate = "Main.main"
-  val fullNameOfTheWebPageClass = "webDSL_Leon.webDescription_Leon.WebPage"
+  val fullNameOfTheWebPageClass = "webDSL.webDescription.WebPage"
 
-  def evaluateAndConvertResult(program: Program, sReporter: ServerReporter): ProgramEvaluationResult = {
+  def evaluateAndConvertResult(program: Program, sReporter: ServerReporter): SourceCodeSubmissionResult = {
     val resultWebPage: Option[WebPage] = evaluateProgram(program, sReporter) match {
       case Some(resultExpr) => convertWebPageExprToClientWebPage(resultExpr, program, sReporter)
       case None => None
     }
     //TODO: give something else than "" (the actual log of the evaluation/conversion process for example)
-    ProgramEvaluationResult(resultWebPage, "")
+    SourceCodeSubmissionResult(resultWebPage, "")
   }
 
-  def evaluateProgram(program: Program, sReporter: ServerReporter): Option[Expr] = {
+  private def evaluateProgram(program: Program, sReporter: ServerReporter): Option[Expr] = {
     sReporter.report(Info, "Starting evaluation of the submitted program...")
     val leonReporter = new DefaultReporter(Set())
     val ctx = leon.Main.processOptions(Seq()).copy(reporter = leonReporter)
@@ -54,33 +55,48 @@ object ProgramEvaluator {
     }
   }
 
-  def convertWebPageExprToClientWebPage(webPageExpr: Expr, program: Program, sReporter: ServerReporter): Option[WebPage] = {
-    Some(WebPage(leon.collection.List(), leon.collection.List()))
+  private def convertWebPageExprToClientWebPage(webPageExpr: Expr, program: Program, sReporter: ServerReporter): Option[WebPage] = {
 
-    //    case class ExceptionDuringConversion(msg:String) extends Exception
 
-//    sReporter.report(Info, "Starting conversion of the leon Expr returned by the submitted program to a WebPage (built on webDSL_Client)...")
+    case class ExceptionDuringConversion(msg:String) extends Exception
 
-    //    try {
-//      /** Looking up the case classes of webDSL_Leon**/
-//      def lookupCaseClass(caseClassFullName: String, program: Program): CaseClassDef = {
-//        program.lookupCaseClass(caseClassFullName) match {
-//          case Some(classDef) => classDef
-//          case None => {
-//            val msg = "lookupCaseClass(\"" + fullNameOfTheWebPageClass + "\") gave no result"
-//            sReporter.report(Error, msg)
-//            throw ExceptionDuringConversion(msg)
-//          }
-//        }
-//      }
-//      val webPageClassDef = lookupCaseClass(fullNameOfTheWebPageClass, program)
-//
-//      webPageExpr match {
-//        case CaseClass(CaseClassType(`webPageClassDef`, List()), l) =>
-//          assert(l.size == 1)
-//          ???
-////          WebPage(evalList(l.head))
-//      }
+    sReporter.report(Info, "Starting conversion of the leon Expr returned by the submitted program to a WebPage...")
+
+    try {
+      /** Looking up the case classes of webDSL_Leon**/
+      def lookupCaseClass(program: Program)(caseClassFullName: String): CaseClassDef = {
+        program.lookupCaseClass(caseClassFullName) match {
+          case Some(classDef) => classDef
+          case None => {
+            val msg = "lookupCaseClass(\"" + caseClassFullName + "\") gave no result"
+            sReporter.report(Error, msg)
+            throw ExceptionDuringConversion(msg)
+          }
+        }
+      }
+//      val webPageClassDef = lookupCaseClass(program)(fullNameOfTheWebPageClass)
+
+      //Only actual case classes, not the traits present in the hierarchy
+      val fullClassNamesList = List(
+        "leon.webDSL.webDescription.WebPage",
+        "leon.webDSL.webDescription.TestWebAttribute1",
+        "leon.webDSL.webDescription.TestWebElement1",
+//        "leon.webDSL.webDescription.WebElement",
+//        "leon.webDSL.webDescription.WebAttribute",
+//        "leon.webDSL.webDescription.WebPageAttribute",
+        "leon.webDSL.webDescription.TestWebPageAttribute1"
+      )
+
+      val caseClassDefList = fullClassNamesList.map(lookupCaseClass(program))
+
+      /*webPageExpr match {
+        case CaseClass(CaseClassType(`webPageClassDef`, List()), l) =>
+          WebPage(evalList(l.head), eval)
+      }
+
+          def unExpr(expr: Expr):  = {
+          }
+        }*/
 //
 //      //TODO: Possible improvement: Making a subclass of List in the webDSL_Client and using it instead of List.
 //      //TODO: It will make the switching to leon.collecton.List in the webDSL_Client easier (if it is ever done, that is).
@@ -95,14 +111,15 @@ object ProgramEvaluator {
 ////          case
 ////        }
 //      }
-//    }
-//    catch {
-//      case ExceptionDuringConversion(msg) => {
-//        sReporter.report(Error, msg)
-//        return None
-//      }
-//    }
-//    sReporter.report(Info, "Ended conversion of the leon Expr returned by the submitted program to a WebPage (built on webDSL_Client).")
-//    ???
+    }
+    catch {
+      case ExceptionDuringConversion(msg) => {
+        sReporter.report(Error, msg)
+        return None
+      }
+    }
+    sReporter.report(Info, "Ended conversion of the leon Expr returned by the submitted program to a WebPage.")
+    //TODO: The next line is a dummy implementation. To be removed later.
+    return Some(WebPage(leon.collection.List(), leon.collection.List()))
   }
 }

@@ -4,7 +4,7 @@ import javax.swing.Timer
 import japgolly.scalajs.react.{ReactDOM, Callback, CallbackTo}
 import org.scalajs.dom
 import dom.document
-import shared.Api
+import shared.{SourceCodeSubmissionResult, Api}
 import leon.webDSL.webDescription._
 
 import scalatags.JsDom.all. _
@@ -49,13 +49,19 @@ object ScalaJS_Main extends js.JSApp {
           case Failure(exception) => {println("error during submission of the source code: " + exception.getMessage)}
           case Success(sourceCodeProcessingResult) => {
             println("source code submission success")
-            println("received a webpage")
-            println(sourceCodeProcessingResult.generatedHtml.sons)
-//            println(
-//              s"""
-//                |received a WebPage
-//                | size of the list: ${sourceCodeProcessingResult.generatedHtml.attributesAndSons.size}
-//              """.stripMargin)
+            sourceCodeProcessingResult match {
+              case SourceCodeSubmissionResult(Some(webPage), log) => {
+                println(
+                  s"""
+                     |Received a WebPage
+                     |  Number of webPageAttributes: ${webPage.webPageAttributes.size}
+                     |  Number of webElements: ${webPage.sons.size}
+                  """.stripMargin)
+              }
+              case SourceCodeSubmissionResult(None, log) => {
+                println("No WebPage were provided by the server, something must have gone wrong")
+              }
+            }
 		      }
         }
       }

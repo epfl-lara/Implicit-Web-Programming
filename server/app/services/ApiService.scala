@@ -6,8 +6,9 @@ import leon.frontends.scalac.{ExtractionPhase, ClassgenPhase}
 import leon.purescala.Definitions.Program
 import leon.utils.{NoPosition, TemporaryInputPhase, PrintTreePhase}
 import leon.webDSL.webDescription._
+import programEvaluator.ProgramEvaluator
 import serverReporter.{Info, ServerReporter}
-import shared.{SourceCodeProcessingResult, Api}
+import shared.{SourceCodeSubmissionResult, Api}
 
 import scala.io.BufferedSource
 
@@ -22,7 +23,7 @@ class ApiService extends Api{
     bootstrapSourceCode
   }
 
-  override def submitSourceCode(sourceCode: String): SourceCodeProcessingResult = {
+  override def submitSourceCode(sourceCode: String): SourceCodeSubmissionResult = {
     //val relativePathsToWebpageBuildingDSLFiles = WebpageBuildingDSLFilesPathsProvider.relativePathsToWebpageBuildingDSLFiles.toList
 
     val serverReporter = new ServerReporter
@@ -45,8 +46,6 @@ class ApiService extends Api{
     //    Partially Commented to test the webpageDSLBis
     val sourceCodeWithImport = /*WebpageBuildingDSLFilesPathsProvider.importLine + sys.props("line.separator") +*/ sourceCode
 
-//    val pipelineInput = TemporaryInputPhase(ctx, (List(sourceCodeWithImport), relativePathsToWebpageBuildingDSLFiles))
-    // Swap to test the webpageDSLBis
     val pipelineInput = TemporaryInputPhase(ctx, (List(sourceCodeWithImport), List()))
 
     case class PipelineRunResult(val msg: String, val programOption: Option[Program])
@@ -73,21 +72,21 @@ class ApiService extends Api{
       }
     }
 
-    def executeProgramToGetTheGeneratedWebPageAndTheSourceMap(program: Program): /*Option[*/WebPage/*]*/ = {
+    def executeProgramToGetTheGeneratedWebPageAndTheSourceMap(program: Program): SourceCodeSubmissionResult = {
       //TODO: fill this, it should also return a sourceMap(to be defined)
-      /*Some(*/WebPage(leon.collection.List(), leon.collection.List())/*)*/
+//      /*Some(*/WebPage(leon.collection.List(), leon.collection.List())/*)*/
+      ProgramEvaluator.evaluateAndConvertResult(program, serverReporter)
     }
 
     runPipeline(pipeline, pipelineInput, ctx) match {
       case PipelineRunResult(msg, None) => {
         serverReporter.report(Info, msg)
-        SourceCodeProcessingResult(WebPage(leon.collection.List(), leon.collection.List()))
+        SourceCodeSubmissionResult(None, "asdf")
       }
       case PipelineRunResult(msg, Some(program)) => {
         serverReporter.report(Info, msg)
         //TODO: call executeProgramToGetTheGeneratedWebPageAndTheSourceMap and send the generated webpage and the source map
-        SourceCodeProcessingResult(executeProgramToGetTheGeneratedWebPageAndTheSourceMap(program))
-//        ???
+        executeProgramToGetTheGeneratedWebPageAndTheSourceMap(program)
       }
     }
   }

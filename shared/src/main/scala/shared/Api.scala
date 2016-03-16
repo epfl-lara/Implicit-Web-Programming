@@ -5,6 +5,6 @@ package shared
   */
 trait Api {
   def getBootstrapSourceCode(): String
-  def submitSourceCode(sourceCode: String): SourceCodeProcessingResult
+  def submitSourceCode(sourceCode: String): SourceCodeSubmissionResult
 //  def submitHtml(don't know, something that indicate a change made to the html): String //New Source Code
 }
