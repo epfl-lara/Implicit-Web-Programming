@@ -46,7 +46,7 @@ object ScalaJS_Main extends js.JSApp {
       Callback{
         println("submit source code change")
         AjaxClient[Api].submitSourceCode(AceEditor.getEditorValue).call().onComplete {
-          case Failure(exception) => {println("error during submission of the source code: " + exception.getMessage)}
+          case Failure(exception) => {println("error during submission of the source code: " + exception)}
           case Success(sourceCodeProcessingResult) => {
             println("source code submission success")
             sourceCodeProcessingResult match {

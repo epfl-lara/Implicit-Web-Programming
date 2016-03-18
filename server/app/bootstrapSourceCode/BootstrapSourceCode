@@ -2,7 +2,8 @@ import leon.collection._
 import leon.webDSL.webDescription._
 
 object Main {
-    def main() {
+    def main() = {
         val w = WebPage(List(), List())
+        return w
     }
 }

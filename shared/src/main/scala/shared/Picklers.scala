@@ -44,4 +44,5 @@ object Picklers extends PicklerHelper {
 
   implicit val webElementPickler = compositePickler[WebElement]
   webElementPickler.addConcreteType[TestWebElement1]
+  webElementPickler.addConcreteType[TestWebElement2]
 }
