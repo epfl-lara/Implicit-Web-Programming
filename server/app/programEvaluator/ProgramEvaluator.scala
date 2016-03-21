@@ -1,5 +1,8 @@
 package programEvaluator
 
+import java.lang.reflect.Type
+import javassist.bytecode.stackmap.TypeTag
+
 import leon.DefaultReporter
 import leon.evaluators.{EvaluationResults, AbstractEvaluator}
 import leon.purescala.Definitions.{CaseClassDef, Program}
@@ -8,7 +11,9 @@ import leon.purescala.Types.CaseClassType
 import leon.webDSL.webDescription._
 import serverReporter._
 import shared.SourceCodeSubmissionResult
-import scala.reflect.runtime.{universe=>ru}
+import webDSL.webDescription.Register
+import scala.reflect.runtime.universe
+import scala.reflect.api
 
 /**
   * Created by dupriez on 3/10/16.
@@ -80,63 +85,78 @@ object ProgramEvaluator {
 //      val webPageClassDef = lookupCaseClass(program)(fullNameOfTheWebPageClass)
 
       //Only actual case classes, not the traits present in the hierarchy
-      val fullClassNamesList = List(
-        "leon.webDSL.webDescription.WebPage",
-        "leon.webDSL.webDescription.TestWebAttribute1",
-        "leon.webDSL.webDescription.TestWebElement1",
-        "leon.webDSL.webDescription.TestWebElement2",
-//        "leon.webDSL.webDescription.WebElement",
-//        "leon.webDSL.webDescription.WebAttribute",
-//        "leon.webDSL.webDescription.WebPageAttribute",
-        "leon.webDSL.webDescription.TestWebPageAttribute1"
-      )
+//      val fullClassNamesList = List(
+//        "leon.webDSL.webDescription.WebPage",
+//        "leon.webDSL.webDescription.TestWebAttribute1",
+//        "leon.webDSL.webDescription.TestWebElement1",
+//        "leon.webDSL.webDescription.TestWebElement2",
+//        "leon.webDSL.webDescription.TestWebPageAttribute1"
+//      )
 
-      val caseClassDefList = fullClassNamesList.map(lookupCaseClass(program))
+//      val caseClassDefList = fullClassNamesList.map(lookupCaseClass(program))
 
 //      val map = Map("leon.webDSL.webDescription.WebPage" -> WebPage.getClass)
 
-      def getReflectConstructor[T: ru.TypeTag] = {
-        sReporter.report(Info, "getReflectConstructor was called")
-        val mirror = ru.runtimeMirror(getClass.getClassLoader)
-      val d = ru.
-        val classs = ru.typeOf[T].typeSymbol.asClass
-        val classMirror = mirror.reflectClass(classs)
-        val constructor = ru.typeOf[T].decl(ru.termNames.CONSTRUCTOR).asMethod
-        val constructorMirror = classMirror.reflectConstructor(constructor)
-        constructorMirror
-      }
+//      def getReflectConstructor[T: universe.TypeTag] = {
+//        sReporter.report(Info, "getReflectConstructor was called")
+//        val mirror = universe.runtimeMirror(getClass.getClassLoader)
+//        val classs = universe.typeOf[T].typeSymbol.asClass
+//        val classMirror = mirror.reflectClass(classs)
+//        val constructor = universe.typeOf[T].decl(universe.termNames.CONSTRUCTOR).asMethod
+//        val constructorMirror = classMirror.reflectConstructor(constructor)
+//        constructorMirror
+//      }
 
-//      val constructorMap = Map(
-//        "leon.webDSL.webDescription.WebPage" -> getReflectConstructor[WebPage],
-//        "leon.webDSL.webDescription.TestWebElement2" -> getReflectConstructor[TestWebElement2]
-//      )
+//      def backward[T](tpe: Type): TypeTag[T] =
+//        val mirror = universe.runtimeMirror(getClass.getClassLoader)
+//        TypeTag(mirror, new api.TypeCreator {
+//          def apply[U <: api.Universe with Singleton](m: api.Mirror[U]) =
+//            if (m eq mirror) tpe.asInstanceOf[U # Type]
+//            else throw new IllegalArgumentException(s"Type tag defined in $mirror cannot be migrated to other mirrors.")
+//        })
 
       //The second number is the number of arguments the constructor requires
-      val constructorMap = Map(
-        (lookupCaseClass(program)("leon.webDSL.webDescription.WebPage"), getReflectConstructor[WebPage]),
-        (lookupCaseClass(program)("leon.webDSL.webDescription.TestWebElement2"), getReflectConstructor[TestWebElement2]),
-        (lookupCaseClass(program)("leon.collection.Cons"), getReflectConstructor[leon.collection.Cons[_]]),
-        (lookupCaseClass(program)("leon.collection.Nil"), getReflectConstructor[leon.collection.Nil[_]])
-      )
+//      val constructorMap : Map[CaseClassDef, universe.MethodMirror] = Map(
+//        (lookupCaseClass(program)("leon.webDSL.webDescription.WebPage"), getReflectConstructor[WebPage]),
+//        (lookupCaseClass(program)("leon.webDSL.webDescription.TestWebElement2"), getReflectConstructor[TestWebElement2]),
+//        (lookupCaseClass(program)("leon.collection.Cons"), getReflectConstructor[leon.collection.Cons[_]]),
+//        (lookupCaseClass(program)("leon.collection.Nil"), getReflectConstructor[leon.collection.Nil[_]])
+//      )
+
+      val constructorMap = WebDescriptionClassesRegister.fullNameToConstructorMap.map({case (fullName, constructor) => (lookupCaseClass(program)(fullName), constructor)})
+
+//      def getTypeFromClassName(className: String): reflect.runtime.universe.Type = {
+//        val mirror = universe.runtimeMirror(getClass.getClassLoader)
+//        val class_ = Class.forName(className)
+//        val classSymbol = mirror.classSymbol(class_)
+//        val type_ : universe.Type = classSymbol.toType
+//        val c =getReflectConstructor(type_.asInstanceOf[universe.TypeTag])
+//        val classs = universe.typeOf(type_).typeSymbol.asClass
+//        type_
+//      }
 
 //      val consDef = lookupCaseClass(program)("leon.collection.Cons")
 //      val nilDef = lookupCaseClass(program)("leon.collection.Nil")
 
+      val s =
+        """
+          |
+        """.stripMargin
+
       def unExpr(e: Expr): Any = {
         sReporter.report(Info, "unExpr was called")
         e match {
-//          case CaseClass(CaseClassType(`consDef`, _), Seq(head, tail)) => {
-//            sReporter.report(Info, "case 1")
-//            leon.collection.Cons(unExpr(head), unExpr(tail).asInstanceOf[leon.collection.List[Any]])
-//          }
-//          case CaseClass(CaseClassType(`nilDef`, _), Seq()) => {
-//            sReporter.report(Info, "case 2")
-//            leon.collection.Nil()
-//          }
           case CaseClass(CaseClassType(caseClassDef, targs), args) => {
-            sReporter.report(Info, "case 3")
-//            val theClass = program.lookupCaseClass(map(__caseClassDef))
-            constructorMap(caseClassDef)(args.map(unExpr):_*)
+            constructorMap.get(caseClassDef) match {
+              case Some(constructor) => constructor(args.map (unExpr): _*)
+              case None =>
+                val msg = s"""
+                             |Looked for ${caseClassDef.toString} in the constructorMap, but did not find anything. Throwing exception.
+                             |   Maybe ${caseClassDef.toString} is not registered in server/app/programEvaluator/WebDescriptionClassesRegister.
+                  """.stripMargin
+                sReporter.report(Error, msg)
+                throw ExceptionDuringConversion(msg)
+            }
 //            callConstructorWithNArgs(constructor, argNb, args.map(unExpr).toList)
           }
           case l:Literal[_] => l.value
@@ -144,7 +164,7 @@ object ProgramEvaluator {
         }
       }
 
-//      def callConstructorWithNArgs(constructor: ru.MethodMirror, argNumber: Int, args: List[Any]) : Any = {
+//      def callConstructorWithNArgs(constructor: universe.MethodMirror, argNumber: Int, args: List[Any]) : Any = {
 //        constructor(args:_*)
 //      }
       Some(unExpr(webPageExpr).asInstanceOf[WebPage])
