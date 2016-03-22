@@ -34,38 +34,45 @@ object ScalaJS_Main extends js.JSApp {
     //    includeScriptInMainTemplate(script("console.info(\"hey\")"))
     fillSourceCodeDiv()
     fillViewerDiv()
+    /*TODO: Intention: the client would make an automatic code submission of the bootstrap code right after being loaded.
+      TODO: In practice, it seems to sends an empty string as sourcecode to the server
+    submitButtonAction() */
   }
-//leon: AbstractEvaluator, ContextualEvaluator, Model, FunctionInvocation,
+
+  def submitButtonAction() = {
+    println("submit source code change")
+    AjaxClient[Api].submitSourceCode(AceEditor.getEditorValue).call().onComplete {
+      case Failure(exception) => {println("error during submission of the source code: " + exception)}
+      case Success(sourceCodeProcessingResult) => {
+        println("Server sent something in response to a code submission")
+        sourceCodeProcessingResult match {
+          case SourceCodeSubmissionResult(Some(webPage), log) => {
+            println(
+              s"""
+                 |Received "Some(WebPage)"
+                 |  Number of webPageAttributes: ${webPage.webPageAttributes.size}
+                 |  Number of webElements: ${webPage.sons.size}
+                  """.stripMargin)
+          }
+          case SourceCodeSubmissionResult(None, log) => {
+            println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
+          }
+        }
+      }
+    }
+  }
+  def submitButtonCallback: Callback = {
+    Callback{
+      submitButtonAction()
+    }
+  }
 
   def fillSourceCodeDiv() = {
     val destinationDivId = "SourceCodeDiv"
 
     val title = <.h1("Source Code")
 
-    def submitButtonCallback: Callback = {
-      Callback{
-        println("submit source code change")
-        AjaxClient[Api].submitSourceCode(AceEditor.getEditorValue).call().onComplete {
-          case Failure(exception) => {println("error during submission of the source code: " + exception)}
-          case Success(sourceCodeProcessingResult) => {
-            println("source code submission success")
-            sourceCodeProcessingResult match {
-              case SourceCodeSubmissionResult(Some(webPage), log) => {
-                println(
-                  s"""
-                     |Received a WebPage
-                     |  Number of webPageAttributes: ${webPage.webPageAttributes.size}
-                     |  Number of webElements: ${webPage.sons.size}
-                  """.stripMargin)
-              }
-              case SourceCodeSubmissionResult(None, log) => {
-                println("No WebPage were provided by the server, something must have gone wrong")
-              }
-            }
-		      }
-        }
-      }
-    }
+
     val submitButton = <.button(
     ^.onClick --> submitButtonCallback,
     "Submit source code change"
@@ -104,10 +111,29 @@ object ScalaJS_Main extends js.JSApp {
       ^.onClick --> submitButtonCallback,
       "Submit html change"
     )
-    val htmlDisplayerDiv = <.div()
+//    var i = 1
+//    def testCallback: Callback = {
+//      Callback{
+//        println("testCallback")
+//        val par = <.p(
+//          "paragraph " + i
+//        )
+//        ReactDOM.render(par, document.getElementById("htmlDisplayerDiv"))
+//        i=i+1
+//        println("paragraph rendered")
+//      }
+//    }
+//    val testButton = <.button(
+//      ^.onClick --> testCallback,
+//      "Test button"
+//    )
+    val htmlDisplayerDiv = <.div(
+      ^.id := "htmlDisplayerDiv"
+    )
     val divContent = <.div(
       title,
       submitButton,
+//      testButton,
       htmlDisplayerDiv
     )
     ReactDOM.render(divContent, document.getElementById(destinationDivId))
@@ -185,4 +211,6 @@ object ScalaJS_Main extends js.JSApp {
 //  def includeScriptInMainTemplate(scriptTagToInclude: scalatags.JsDom.TypedTag[org.scalajs.dom.html.Script]) = {
 //    dom.document.getElementById("scalajsScriptInclusionPoint").appendChild(scriptTagToInclude.render)
 //  }
+    def renderWebPage(webPage: WebPage, destinationDivID: String) = {
+    }
 }

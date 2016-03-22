@@ -40,24 +40,20 @@ object ProgramEvaluator {
     val mainFunDef = program.lookupFunDef(fullNameOfTheFunctionToEvaluate) match {
       case Some(funDef) => funDef
       case None => {
-        sReporter.report(Error, "lookupFunDef(\"" + fullNameOfTheFunctionToEvaluate + "\") gave no result")
+        sReporter.report(Error, "lookupFunDef(\"" + fullNameOfTheFunctionToEvaluate + "\") gave no result", 1)
         return None
       }
     }
     abstractEvaluator.eval(FunctionInvocation(mainFunDef.typed, List())) match {
       case EvaluationResults.Successful((resultExpr, evaluationTreeExpr)) => {
-        sReporter.report(Info, "Ended evaluation of the submitted program.")
+        sReporter.report(Info, "Evaluation successful.", 1)
         //TODO: should also export the evaluationTreeExpr
-        sReporter.report(Info, "resultExpr: "+ resultExpr)
-        Some(resultExpr)
+        sReporter.report(Info, "resultExpr: "+ resultExpr, 1)
+        return Some(resultExpr)
       }
       case EvaluationResults.EvaluatorError(msg) => {
-        sReporter.report(Error, "EvaluationError during evaluation of the program by leon: "+msg)
-        None
-      }
-      case EvaluationResults.RuntimeError(msg) => {
-        sReporter.report(Error, "RuntimeError during evaluation of the program by leon: "+msg)
-        None
+        sReporter.report(Error, "Evaluation failed: abstractEvaluator returned an EvaluationError: "+msg, 1)
+        return None
       }
     }
   }
@@ -68,16 +64,16 @@ object ProgramEvaluator {
     case class ExceptionDuringConversion(msg:String) extends Exception
 
     sReporter.report(Info, "Starting conversion of the leon Expr returned by the submitted program to a WebPage...")
-    sReporter.report(Info, "webPageExpr: "+ webPageExpr)
+    sReporter.report(Info, "webPageExpr to be converted: "+ webPageExpr, 1)
 
-    val result = try {
+    val result: Either[WebPage, String] = try {
       /** Looking up the case classes of webDSL_Leon**/
       def lookupCaseClass(program: Program)(caseClassFullName: String): CaseClassDef = {
         program.lookupCaseClass(caseClassFullName) match {
           case Some(classDef) => classDef
           case None => {
-            val msg = "lookupCaseClass(\"" + caseClassFullName + "\") gave no result"
-            sReporter.report(Error, msg)
+            val msg = "Conversion failed, lookupCaseClass(\"" + caseClassFullName + "\") gave no result"
+            sReporter.report(Error, msg, 1)
             throw ExceptionDuringConversion(msg)
           }
         }
@@ -138,13 +134,8 @@ object ProgramEvaluator {
 //      val consDef = lookupCaseClass(program)("leon.collection.Cons")
 //      val nilDef = lookupCaseClass(program)("leon.collection.Nil")
 
-      val s =
-        """
-          |
-        """.stripMargin
-
       def unExpr(e: Expr): Any = {
-        sReporter.report(Info, "unExpr was called")
+//        sReporter.report(Info, "unExpr was called")
         e match {
           case CaseClass(CaseClassType(caseClassDef, targs), args) => {
             constructorMap.get(caseClassDef) match {
@@ -154,7 +145,6 @@ object ProgramEvaluator {
                              |Looked for ${caseClassDef.toString} in the constructorMap, but did not find anything. Throwing exception.
                              |   Maybe ${caseClassDef.toString} is not registered in server/app/programEvaluator/WebDescriptionClassesRegister.
                   """.stripMargin
-                sReporter.report(Error, msg)
                 throw ExceptionDuringConversion(msg)
             }
 //            callConstructorWithNArgs(constructor, argNb, args.map(unExpr).toList)
@@ -167,7 +157,7 @@ object ProgramEvaluator {
 //      def callConstructorWithNArgs(constructor: universe.MethodMirror, argNumber: Int, args: List[Any]) : Any = {
 //        constructor(args:_*)
 //      }
-      Some(unExpr(webPageExpr).asInstanceOf[WebPage])
+      Left(unExpr(webPageExpr).asInstanceOf[WebPage])
 
 //      def unExprList(listExpr: Expr): leon.collection.List[AnyRef] = {
 //
@@ -197,21 +187,17 @@ object ProgramEvaluator {
 //      }
     }
     catch {
-      case ExceptionDuringConversion(msg) => {
-        sReporter.report(Error, msg)
-        return None
+      case ExceptionDuringConversion(errorString) => {
+        Right(errorString)
       }
     }
-    sReporter.report(Info, "Ended conversion of the leon Expr returned by the submitted program to a WebPage.")
-    result
-    //TODO: The next line is a dummy implementation. To be removed later.
-//    return Some(WebPage(leon.collection.List(), leon.collection.List()))
+    result match {
+      case Left(webPage) =>
+        sReporter.report(Info, "Conversion successful", 1)
+        Some(webPage)
+      case Right(errorString) =>
+        sReporter.report(Error, "Conversion failed: " + errorString, 1)
+        None
+    }
   }
 }
-/*
-[quote="PsiComa"][quote="cyrusa"]Is the FAQ from TI3 any relevant to anything in SA?[/quote]
-Absolutely, because SA is a bunch of changes to those rules. If they originally couldn't buy tech to get CC, they SURE AS HELL wouldn't be allowed in SA either. Cause I wouldn't ADD a shitty rule like that. It makes more sense not removing a shitty rule than adding one.[/quote]
-
-I meant that we considered this possible problem and came up with a clean-looking solution (Virus cannot use the secondary of Technology).
-After that point, I think it is pointless to try to respect what the official FAQ says on the subject if it is different from the solution we came up with.
- */

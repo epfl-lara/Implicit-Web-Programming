@@ -4,6 +4,11 @@ import boopickle.PicklerHelper
 import leon.webDSL.webDescription._
 
 object Picklers extends PicklerHelper {
+
+  implicit val webElementPickler = compositePickler[WebElement]
+  webElementPickler.addConcreteType[TestWebElement1]
+  webElementPickler.addConcreteType[TestWebElement2]
+
   private val consCode = 1
   private val nilCode = 2
 
@@ -42,7 +47,4 @@ object Picklers extends PicklerHelper {
     }
   }
 
-  implicit val webElementPickler = compositePickler[WebElement]
-  webElementPickler.addConcreteType[TestWebElement1]
-  webElementPickler.addConcreteType[TestWebElement2]
 }
