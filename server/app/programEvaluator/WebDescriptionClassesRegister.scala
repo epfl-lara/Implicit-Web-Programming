@@ -1,7 +1,7 @@
 package programEvaluator
 
 import leon.purescala.Definitions.CaseClassDef
-import leon.webDSL.webDescription.{TestWebElement2, WebPage}
+import leon.webDSL.webDescription._
 import scala.reflect.runtime.universe
 
 /**
@@ -13,7 +13,15 @@ object WebDescriptionClassesRegister {
 
   val fullNameToConstructorMap : Map[String, universe.MethodMirror] = Map(
     ("leon.webDSL.webDescription.WebPage", getReflectConstructor[WebPage]),
-    ("leon.webDSL.webDescription.TestWebElement2", getReflectConstructor[TestWebElement2]),
+    ("leon.webDSL.webDescription.Div", getReflectConstructor[Div]),
+    ("leon.webDSL.webDescription.Header", getReflectConstructor[Header]),
+    ("leon.webDSL.webDescription.Paragraph", getReflectConstructor[Paragraph]),
+    ("leon.webDSL.webDescription.HLOne", getReflectConstructor[HLOne]),
+    ("leon.webDSL.webDescription.HLTwo", getReflectConstructor[HLTwo]),
+    ("leon.webDSL.webDescription.HLThree", getReflectConstructor[HLThree]),
+    ("leon.webDSL.webDescription.HLFour", getReflectConstructor[HLFour]),
+    ("leon.webDSL.webDescription.HLFive", getReflectConstructor[HLFive]),
+    ("leon.webDSL.webDescription.HLSix", getReflectConstructor[HLSix]),
     ("leon.collection.Cons", getReflectConstructor[leon.collection.Cons[_]]),
     ("leon.collection.Nil", getReflectConstructor[leon.collection.Nil[_]])
   )

@@ -1,11 +1,12 @@
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing.Timer
 
-import japgolly.scalajs.react.{ReactDOM, Callback, CallbackTo}
+import japgolly.scalajs.react.{ReactElement, ReactDOM, Callback, CallbackTo}
 import org.scalajs.dom
 import dom.document
 import shared.{SourceCodeSubmissionResult, Api}
 import leon.webDSL.webDescription._
+import webDSL.webDescription._
 
 import scalatags.JsDom.all. _
 
@@ -53,6 +54,7 @@ object ScalaJS_Main extends js.JSApp {
                  |  Number of webPageAttributes: ${webPage.webPageAttributes.size}
                  |  Number of webElements: ${webPage.sons.size}
                   """.stripMargin)
+            renderWebPage(webPage, "htmlDisplayerDiv")
           }
           case SourceCodeSubmissionResult(None, log) => {
             println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
@@ -211,6 +213,36 @@ object ScalaJS_Main extends js.JSApp {
 //  def includeScriptInMainTemplate(scriptTagToInclude: scalatags.JsDom.TypedTag[org.scalajs.dom.html.Script]) = {
 //    dom.document.getElementById("scalajsScriptInclusionPoint").appendChild(scriptTagToInclude.render)
 //  }
-    def renderWebPage(webPage: WebPage, destinationDivID: String) = {
+  def renderWebPage(webPage: WebPage, destinationDivID: String) = {
+    for(son <- webPage.sons) yield  {
+      ReactDOM.render(convertWebElementToReactElement(son), document.getElementById(destinationDivID))
     }
+  }
+
+  def leonListToList[T](leonList: leon.collection.List[T]): List[T] = {
+    val listBuffer = leonList.foldLeft(scala.collection.mutable.ListBuffer[T]())((list, elem)=>list += elem)
+    listBuffer.toList
+  }
+
+  def convertWebElementToReactElement(webEl: WebElement) : ReactElement = {
+    webEl match {
+      case Header(level, text) =>
+        level match {
+          case HLOne() => <.h1(text)
+          case HLTwo() => <.h2(text)
+          case HLThree() => <.h3(text)
+          case HLFour() => <.h4(text)
+          case HLFive() => <.h5(text)
+          case HLSix() => <.h6(text)
+        }
+      case Paragraph(text) =>
+        <.p(text)
+      case Div(sons) =>
+        <.div(
+          leonListToList(sons).map(convertWebElementToReactElement)
+        )
+    }
+//    ReactDOM.render(elemToRender, document.getElementById(destinationDivID))
+  }
+
 }

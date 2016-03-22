@@ -5,9 +5,15 @@ import leon.webDSL.webDescription._
 
 object Picklers extends PicklerHelper {
 
+  /**
+    * Link to the documentation of boopickle: https://github.com/ochrons/boopickle
+    *   The most interesting parts for the purpose of manually declaring the picklers for the elements of the
+    *   webDescription package are the sections "Class hierarchies", "Recursive composite types" and "Complex type hierarchies"
+    */
   implicit val webElementPickler = compositePickler[WebElement]
-  webElementPickler.addConcreteType[TestWebElement1]
-  webElementPickler.addConcreteType[TestWebElement2]
+  webElementPickler.addConcreteType[Div]
+  webElementPickler.addConcreteType[Header]
+  webElementPickler.addConcreteType[Paragraph]
 
   private val consCode = 1
   private val nilCode = 2
