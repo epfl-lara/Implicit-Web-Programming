@@ -49,10 +49,15 @@ object ProgramEvaluator {
         sReporter.report(Info, "Evaluation successful.", 1)
         //TODO: should also export the evaluationTreeExpr
         sReporter.report(Info, "resultExpr: "+ resultExpr, 1)
+        sReporter.report(Info, "evaluationTreeExpr: "+ evaluationTreeExpr, 1)
         return Some(resultExpr)
       }
       case EvaluationResults.EvaluatorError(msg) => {
         sReporter.report(Error, "Evaluation failed: abstractEvaluator returned an EvaluationError: "+msg, 1)
+        return None
+      }
+      case EvaluationResults.RuntimeError(msg) => {
+        sReporter.report(Error, "Evaluation failed: abstractEvaluator returned a RuntimeError: "+msg, 1)
         return None
       }
     }

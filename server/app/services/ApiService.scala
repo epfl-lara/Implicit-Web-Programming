@@ -2,6 +2,7 @@ package services
 
 import bootstrapSourceCode.BootstrapSourceCodeGetter
 import leon.purescala.Definitions.Program
+import memory.Memory
 import programEvaluator.{LeonProgramMaker, ProgramEvaluator}
 import serverReporter.ServerReporter
 import shared.{Api, SourceCodeSubmissionResult}
@@ -22,6 +23,7 @@ class ApiService extends Api{
     serverReporter.printReportsInConsole = true
     LeonProgramMaker.makeProgram(sourceCode, serverReporter) match {
       case Some(program) =>
+        Memory.sourceCode = sourceCode
         return ProgramEvaluator.evaluateAndConvertResult(program, serverReporter)
       case None =>
         return SourceCodeSubmissionResult(None, "leon did not manage to create a Program out of the source code")

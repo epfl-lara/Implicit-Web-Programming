@@ -6,6 +6,7 @@ import org.scalajs.dom
 import dom.document
 import shared.{SourceCodeSubmissionResult, Api}
 import leon.webDSL.webDescription._
+import leon.lang.Map._
 import webDSL.webDescription._
 
 import scalatags.JsDom.all. _
@@ -214,9 +215,11 @@ object ScalaJS_Main extends js.JSApp {
 //    dom.document.getElementById("scalajsScriptInclusionPoint").appendChild(scriptTagToInclude.render)
 //  }
   def renderWebPage(webPage: WebPage, destinationDivID: String) = {
-    for(son <- webPage.sons) yield  {
-      ReactDOM.render(convertWebElementToReactElement(son), document.getElementById(destinationDivID))
-    }
+    val webPageDiv = <.div(
+      ^.id := "webPage",
+      leonListToList(webPage.sons).map(convertWebElementToReactElement)
+    )
+    ReactDOM.render(webPageDiv, document.getElementById(destinationDivID))
   }
 
   def leonListToList[T](leonList: leon.collection.List[T]): List[T] = {
@@ -226,7 +229,11 @@ object ScalaJS_Main extends js.JSApp {
 
   def convertWebElementToReactElement(webEl: WebElement) : ReactElement = {
     webEl match {
-      case Header(level, text) =>
+      case Header(level, stringAttributes) =>
+        val text : String = stringAttributes.get(Text) match {
+          case leon.lang.Some(string) => string
+          case leon.lang.None() => ""
+        }
         level match {
           case HLOne() => <.h1(text)
           case HLTwo() => <.h2(text)
@@ -235,14 +242,17 @@ object ScalaJS_Main extends js.JSApp {
           case HLFive() => <.h5(text)
           case HLSix() => <.h6(text)
         }
-      case Paragraph(text) =>
+      case Paragraph(stringAttributes) =>
+        val text : String = stringAttributes.get(Text) match {
+          case leon.lang.Some(string) => string
+          case leon.lang.None() => ""
+        }
         <.p(text)
       case Div(sons) =>
         <.div(
           leonListToList(sons).map(convertWebElementToReactElement)
         )
     }
-//    ReactDOM.render(elemToRender, document.getElementById(destinationDivID))
   }
 
 }
