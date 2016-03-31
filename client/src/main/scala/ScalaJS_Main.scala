@@ -229,11 +229,26 @@ object ScalaJS_Main extends js.JSApp {
 
   def convertWebElementToReactElement(webEl: WebElement) : ReactElement = {
     webEl match {
-      case Header(level, stringAttributes) =>
-        val text : String = stringAttributes.get(Text) match {
-          case leon.lang.Some(string) => string
-          case leon.lang.None() => ""
-        }
+//      case Header(level, stringAttributes) =>
+//        val text : String = stringAttributes.get(Text) match {
+//          case leon.lang.Some(string) => string
+//          case leon.lang.None() => ""
+//        }
+//        level match {
+//          case HLOne() => <.h1(text)
+//          case HLTwo() => <.h2(text)
+//          case HLThree() => <.h3(text)
+//          case HLFour() => <.h4(text)
+//          case HLFive() => <.h5(text)
+//          case HLSix() => <.h6(text)
+//        }
+//      case Paragraph(stringAttributes) =>
+//        val text : String = stringAttributes.get(Text) match {
+//          case leon.lang.Some(string) => string
+//          case leon.lang.None() => ""
+//        }
+//        <.p(text)
+      case Header(text, level) =>
         level match {
           case HLOne() => <.h1(text)
           case HLTwo() => <.h2(text)
@@ -242,11 +257,7 @@ object ScalaJS_Main extends js.JSApp {
           case HLFive() => <.h5(text)
           case HLSix() => <.h6(text)
         }
-      case Paragraph(stringAttributes) =>
-        val text : String = stringAttributes.get(Text) match {
-          case leon.lang.Some(string) => string
-          case leon.lang.None() => ""
-        }
+      case Paragraph(text) =>
         <.p(text)
       case Div(sons) =>
         <.div(

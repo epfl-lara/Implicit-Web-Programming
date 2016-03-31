@@ -15,6 +15,15 @@ object Picklers extends PicklerHelper {
   webElementPickler.addConcreteType[Header]
   webElementPickler.addConcreteType[Paragraph]
 
+  implicit val headerLevelPickler = compositePickler[HeaderLevel]
+  headerLevelPickler.addConcreteType[HLOne]
+  headerLevelPickler.addConcreteType[HLTwo]
+  headerLevelPickler.addConcreteType[HLThree]
+  headerLevelPickler.addConcreteType[HLFour]
+  headerLevelPickler.addConcreteType[HLFive]
+  headerLevelPickler.addConcreteType[HLSix]
+
+
   private val consCode = 1
   private val nilCode = 2
 

@@ -23,7 +23,8 @@ object WebDescriptionClassesRegister {
     ("leon.webDSL.webDescription.HLFive", getReflectConstructor[HLFive]),
     ("leon.webDSL.webDescription.HLSix", getReflectConstructor[HLSix]),
     ("leon.collection.Cons", getReflectConstructor[leon.collection.Cons[_]]),
-    ("leon.collection.Nil", getReflectConstructor[leon.collection.Nil[_]])
+    ("leon.collection.Nil", getReflectConstructor[leon.collection.Nil[_]])//,
+//    ("leon.lang.Map", getReflectConstructor[leon.lang.Map[_,_]])
   )
 
   private def getReflectConstructor[T: universe.TypeTag] = {

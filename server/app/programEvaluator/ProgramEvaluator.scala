@@ -6,9 +6,10 @@ import javassist.bytecode.stackmap.TypeTag
 import leon.DefaultReporter
 import leon.evaluators.{EvaluationResults, AbstractEvaluator}
 import leon.purescala.Definitions.{CaseClassDef, Program}
-import leon.purescala.Expressions.{Literal, CaseClass, FunctionInvocation, Expr}
+import leon.purescala.Expressions._
 import leon.purescala.Types.CaseClassType
 import leon.webDSL.webDescription._
+import serverReporter.Error
 import serverReporter._
 import shared.SourceCodeSubmissionResult
 import webDSL.webDescription.Register
@@ -152,44 +153,15 @@ object ProgramEvaluator {
                   """.stripMargin
                 throw ExceptionDuringConversion(msg)
             }
-//            callConstructorWithNArgs(constructor, argNb, args.map(unExpr).toList)
           }
-          case l:Literal[_] => l.value
-          case _ => {sReporter.report(Info, "Default case, the expr was: "+ e)}
+          case l: Literal[_] => l.value
+          case _ => {sReporter.report(Info, "Default case, the expr was: "+ e, 1)}
         }
       }
 
-//      def callConstructorWithNArgs(constructor: universe.MethodMirror, argNumber: Int, args: List[Any]) : Any = {
-//        constructor(args:_*)
-//      }
-      Left(unExpr(webPageExpr).asInstanceOf[WebPage])
-
-//      def unExprList(listExpr: Expr): leon.collection.List[AnyRef] = {
-//
-//      }
-
-      /*webPageExpr match {
-        case CaseClass(CaseClassType(`webPageClassDef`, List()), l) =>
-          WebPage(evalList(l.head), eval)
-      }
-
-          def unExpr(expr: Expr):  = {
-          }
-        }*/
-//
-//      //TODO: Possible improvement: Making a subclass of List in the webDSL_Client and using it instead of List.
-//      //TODO: It will make the switching to leon.collecton.List in the webDSL_Client easier (if it is ever done, that is).
-//      def evalList(leonListExpr: Expr): List[WebStuff] = {
-//        leonListExpr match {
-//          case program.library.Cons => List()
-//        }
-//      }
-//      def evalWebStuffExpr(webStuffExpr: Expr): WebStuff = {
-//        ???
-////        webStuffExpr match {
-////          case
-////        }
-//      }
+      val programEvaluationResult = unExpr(webPageExpr).asInstanceOf[WebPage]
+      sReporter.report(Info, "Program evaluation result after unExpr: " + programEvaluationResult,1)
+      Left(programEvaluationResult)
     }
     catch {
       case ExceptionDuringConversion(errorString) => {

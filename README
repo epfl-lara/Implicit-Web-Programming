@@ -3,6 +3,18 @@ This is your new Play application
 
 This file will be packaged with your application, when using `activator dist`.
 
+#To clone the project:
+> git clone <the cloning url available on the github: https://github.com/epfl-lara/Implicit-Web-Programming>
+> cd Implicit-Web-Programming/
+> git submodule init
+> git submodule update
+
+Intellij will complain that:
+	"Error:Can't register given path of type 'SOURCE' because it's out of content root.
+    Content root: '/home/dupriez/MyFolder/ImplicitWebProgramming/ImplicitWebProgramming/leon/library'
+    Given path: '/home/dupriez/MyFolder/ImplicitWebProgramming/ImplicitWebProgramming/leon/library-2.11'"
+but will work nonetheless
+
 #To pull the latest version
 > git pull
 > git submodule update --recursive
