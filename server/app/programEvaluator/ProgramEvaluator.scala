@@ -23,13 +23,18 @@ object ProgramEvaluator {
   val fullNameOfTheFunctionToEvaluate = "Main.main"
   val fullNameOfTheWebPageClass = "webDSL.webDescription.WebPage"
 
-  def evaluateAndConvertResult(program: Program, sReporter: ServerReporter): SourceCodeSubmissionResult = {
-    val resultWebPage: Option[WebPage] = evaluateProgram(program, sReporter) match {
-      case Some(resultExpr) => convertWebPageExprToClientWebPage(resultExpr, program, sReporter)
+  def evaluateAndConvertResult(program: Program, sourceCode: String, sReporter: ServerReporter): (Option[(WebPage, SourceMap)], String) = {
+    val resultWebPage: Option[(WebPage, SourceMap)] = evaluateProgram(program, sReporter) match {
+      case Some(resultExpr) => convertWebPageExprToClientWebPageAndSourceMap(resultExpr, program, sourceCode, sReporter)
       case None => None
     }
     //TODO: give something else than "" (the actual log of the evaluation/conversion process for example)
-    SourceCodeSubmissionResult(resultWebPage, "")
+    resultWebPage match {
+      case Some((webPage, sourceMap)) =>
+        (Some((webPage, sourceMap)),"")
+      case None =>
+        (None, "")
+    }
   }
 
   private def evaluateProgram(program: Program, sReporter: ServerReporter): Option[Expr] = {
@@ -64,7 +69,7 @@ object ProgramEvaluator {
     }
   }
 
-  private def convertWebPageExprToClientWebPage(webPageExpr: Expr, program: Program, sReporter: ServerReporter): Option[WebPage] = {
+  private def convertWebPageExprToClientWebPageAndSourceMap(webPageExpr: Expr, program: Program, sourceCode: String, sReporter: ServerReporter): Option[(WebPage, SourceMap)] = {
 
 
     case class ExceptionDuringConversion(msg:String) extends Exception
@@ -72,7 +77,7 @@ object ProgramEvaluator {
     sReporter.report(Info, "Starting conversion of the leon Expr returned by the submitted program to a WebPage...")
     sReporter.report(Info, "webPageExpr to be converted: "+ webPageExpr, 1)
 
-    val result: Either[WebPage, String] = try {
+    val result: Either[(WebPage, SourceMap), String] = try {
       /** Looking up the case classes of webDSL_Leon**/
       def lookupCaseClass(program: Program)(caseClassFullName: String): CaseClassDef = {
         program.lookupCaseClass(caseClassFullName) match {
@@ -140,12 +145,12 @@ object ProgramEvaluator {
 //      val consDef = lookupCaseClass(program)("leon.collection.Cons")
 //      val nilDef = lookupCaseClass(program)("leon.collection.Nil")
 
-      def unExpr(e: Expr): Any = {
+      def unExpr(sourceMap: SourceMap)(e: Expr): Any = {
 //        sReporter.report(Info, "unExpr was called")
         e match {
           case CaseClass(CaseClassType(caseClassDef, targs), args) => {
             constructorMap.get(caseClassDef) match {
-              case Some(constructor) => constructor(args.map (unExpr): _*)
+              case Some(constructor) => constructor(args.map (unExpr(sourceMap)): _*)
               case None =>
                 val msg = s"""
                              |Looked for ${caseClassDef.toString} in the constructorMap, but did not find anything. Throwing exception.
@@ -159,7 +164,20 @@ object ProgramEvaluator {
         }
       }
 
-      val programEvaluationResult = unExpr(webPageExpr).asInstanceOf[WebPage]
+      val sourceMap = new SourceMap(sourceCode)
+      //WebPage without the contained WebElement having proper IDs
+      val webPage = unExpr(sourceMap)(webPageExpr).asInstanceOf[WebPage]
+      //Uses side effects to give an ID to each webElement of a leonList
+      def giveIDToWebElements(webElList: leon.collection.List[WebElement], idGenerator: IDGenerator): Unit = {
+        webElList.foldLeft(0)((useless, webElem) => {
+          webElem.weid = idGenerator.generateID()
+          giveIDToWebElements(webElem.sons, idGenerator)
+          0
+        })
+      }
+      giveIDToWebElements(webPage.sons, new IDGenerator)
+      webPage.sons.foldLeft(0)((useless, webEleme) => {println(webEleme.weid); useless})
+      val programEvaluationResult = (webPage, sourceMap)
       sReporter.report(Info, "Program evaluation result after unExpr: " + programEvaluationResult,1)
       Left(programEvaluationResult)
     }
@@ -169,12 +187,23 @@ object ProgramEvaluator {
       }
     }
     result match {
-      case Left(webPage) =>
+      case Left((webPage, sourceMap)) =>
         sReporter.report(Info, "Conversion successful", 1)
-        Some(webPage)
+        Some((webPage, sourceMap))
       case Right(errorString) =>
         sReporter.report(Error, "Conversion failed: " + errorString, 1)
         None
     }
+  }
+}
+
+class IDGenerator {
+  private var _counter = 0
+  def generateID() = {
+    _counter = _counter+1
+    _counter
+  }
+  def reset() = {
+    _counter = 0
   }
 }

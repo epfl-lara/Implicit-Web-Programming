@@ -23,7 +23,6 @@ object Picklers extends PicklerHelper {
   headerLevelPickler.addConcreteType[HLFive]
   headerLevelPickler.addConcreteType[HLSix]
 
-
   private val consCode = 1
   private val nilCode = 2
 

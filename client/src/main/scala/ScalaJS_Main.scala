@@ -1,22 +1,19 @@
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing.Timer
 
-import japgolly.scalajs.react.{ReactElement, ReactDOM, Callback, CallbackTo}
+import japgolly.scalajs.react.{Callback, CallbackTo, ReactDOM, ReactElement}
 import org.scalajs.dom
 import dom.document
-import shared.{SourceCodeSubmissionResult, Api}
+import shared.{Api, SourceCodeSubmissionResult, StringModification, StringModificationSubmissionResult}
 import leon.webDSL.webDescription._
 import leon.lang.Map._
 import webDSL.webDescription._
 
-import scalatags.JsDom.all. _
-
+import scalatags.JsDom.all._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExport
 import scala.util.{Failure, Success}
-
 import com.scalawarrior.scalajs.ace._
-
 import japgolly.scalajs.react.vdom.prefix_<^._
 
 /** Imports for using AjaxClient **/
@@ -55,6 +52,7 @@ object ScalaJS_Main extends js.JSApp {
                  |  Number of webPageAttributes: ${webPage.webPageAttributes.size}
                  |  Number of webElements: ${webPage.sons.size}
                   """.stripMargin)
+            webPage.asInstanceOf[WebPage].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
             renderWebPage(webPage, "htmlDisplayerDiv")
           }
           case SourceCodeSubmissionResult(None, log) => {
@@ -67,6 +65,28 @@ object ScalaJS_Main extends js.JSApp {
   def submitButtonCallback: Callback = {
     Callback{
       submitButtonAction()
+    }
+  }
+
+  def submitStringModification(webElementID: Int, modifiedAttribute: StringWebAttribute, newValue: String) = {
+    println("Send Modification")
+    AjaxClient[Api].submitStringModification(StringModification(webElementID, modifiedAttribute, newValue)).call().onComplete {
+      case Failure(exception) => {println("error during submission of modification: " + exception)}
+      case Success(stringModificationSubmissionResult) => {
+        println("Server sent something in response to a string modification submission")
+        stringModificationSubmissionResult match {
+          case StringModificationSubmissionResult(Some(newSourceCode), log) => {
+            println(
+              s"""
+                 |Received new source code: $newSourceCode
+                  """.stripMargin)
+//            renderWebPage(webPage, "htmlDisplayerDiv")
+          }
+          case StringModificationSubmissionResult(None, log) => {
+            println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
+          }
+        }
+      }
     }
   }
 
@@ -114,6 +134,16 @@ object ScalaJS_Main extends js.JSApp {
       ^.onClick --> submitButtonCallback,
       "Submit html change"
     )
+    val stringModificationForm = <.form(
+      <.input(^.`type` := "text", ^.name := "webEID", ^.value := "1"),
+      <.input(^.`type` := "radio", ^.name := "attribute", ^.value := "Text"),
+      <.input(^.`type` := "text", ^.name := "newValue", ^.value := "newValue"),
+      <.input(^.`type` := "submit", ^.value := "Submit String Modification")//,
+//      ^.method := "post",
+//      ^.formAction := submitStringModification()
+    )
+//    val f = stringModificationForm.
+
 //    var i = 1
 //    def testCallback: Callback = {
 //      Callback{
@@ -227,6 +257,8 @@ object ScalaJS_Main extends js.JSApp {
     listBuffer.toList
   }
 
+//  an attribute to store the webElement IDs attributed during the execution of the program
+  val impWebProgIDAttr = "data-impwebprogid".reactAttr
   def convertWebElementToReactElement(webEl: WebElement) : ReactElement = {
     webEl match {
 //      case Header(level, stringAttributes) =>
@@ -248,19 +280,22 @@ object ScalaJS_Main extends js.JSApp {
 //          case leon.lang.None() => ""
 //        }
 //        <.p(text)
-      case Header(text, level) =>
+      case Header(/*webElID,*/ text, level) =>
         level match {
-          case HLOne() => <.h1(text)
-          case HLTwo() => <.h2(text)
-          case HLThree() => <.h3(text)
-          case HLFour() => <.h4(text)
-          case HLFive() => <.h5(text)
-          case HLSix() => <.h6(text)
+          case HLOne() => <.h1(text+" "+webEl.weid, impWebProgIDAttr := webEl.weid)
+          case HLTwo() => <.h2(text+" "+webEl.weid, impWebProgIDAttr := webEl.weid)
+          case HLThree() => <.h3(text+" "+webEl.weid, impWebProgIDAttr := webEl.weid)
+          case HLFour() => <.h4(text+" "+webEl.weid, impWebProgIDAttr := webEl.weid)
+          case HLFive() => <.h5(text+" "+webEl.weid, impWebProgIDAttr := webEl.weid)
+          case HLSix() => <.h6(text+" "+webEl.weid, impWebProgIDAttr := webEl.weid)
         }
-      case Paragraph(text) =>
-        <.p(text)
-      case Div(sons) =>
+      case Paragraph(/*webElID,*/ text) =>
+        //TODO: change "heyhey" to the value of the text of the paragraph
+        val textChangeCallBack = Callback{ println("paragraph changed"); submitStringModification(webEl.weid, Text, "heyhey")}
+        <.p(text+" "+webEl.weid, impWebProgIDAttr := webEl.weid, ^.contentEditable := "true", ^.onChange --> textChangeCallBack)
+      case Div(/*webElID,*/ sons) =>
         <.div(
+          impWebProgIDAttr := webEl.weid,
           leonListToList(sons).map(convertWebElementToReactElement)
         )
     }

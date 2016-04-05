@@ -4,8 +4,9 @@ import leon.webDSL.webDescription._
 object Main {
     //This function will be called by the evaluator. It has to return a WebPage
     def main() = {
-      val header = Header(HLTwo(), "header")
-        val w = WebPage(List(), List(header))
-        w
+      val p = Paragraph("text")
+      val h = Header("HeAdEr", HLTwo())
+      val w = WebPage(List(), List(h,p))
+      w
     }
 }
