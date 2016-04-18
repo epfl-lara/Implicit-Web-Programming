@@ -1,4 +1,4 @@
-package serverReporter
+package logging.serverReporter
 
 import scala.collection.mutable
 

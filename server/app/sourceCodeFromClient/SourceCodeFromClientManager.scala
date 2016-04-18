@@ -3,7 +3,7 @@ package sourceCodeFromClient
 import java.io._
 import javax.print.attribute.standard.Severity
 
-import serverReporter._
+import logging.serverReporter._
 
 import scala.io.BufferedSource
 

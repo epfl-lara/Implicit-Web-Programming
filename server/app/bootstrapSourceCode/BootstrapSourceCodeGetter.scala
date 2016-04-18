@@ -2,7 +2,7 @@ package bootstrapSourceCode
 
 import java.io.ByteArrayInputStream
 
-import serverReporter.{Error, Info, ServerReporter}
+import logging.serverReporter.{Error, Info, ServerReporter}
 
 import scala.io.BufferedSource
 

@@ -11,19 +11,20 @@ import scala.reflect.runtime.universe
   */
 object WebDescriptionClassesRegister {
 
-  val fullNameToConstructorMap : Map[String, universe.MethodMirror] = Map(
-    ("leon.webDSL.webDescription.WebPage", getReflectConstructor[WebPage]),
-    ("leon.webDSL.webDescription.Div", getReflectConstructor[Div]),
-    ("leon.webDSL.webDescription.Header", getReflectConstructor[Header]),
-    ("leon.webDSL.webDescription.Paragraph", getReflectConstructor[Paragraph]),
-    ("leon.webDSL.webDescription.HLOne", getReflectConstructor[HLOne]),
-    ("leon.webDSL.webDescription.HLTwo", getReflectConstructor[HLTwo]),
-    ("leon.webDSL.webDescription.HLThree", getReflectConstructor[HLThree]),
-    ("leon.webDSL.webDescription.HLFour", getReflectConstructor[HLFour]),
-    ("leon.webDSL.webDescription.HLFive", getReflectConstructor[HLFive]),
-    ("leon.webDSL.webDescription.HLSix", getReflectConstructor[HLSix]),
-    ("leon.collection.Cons", getReflectConstructor[leon.collection.Cons[_]]),
-    ("leon.collection.Nil", getReflectConstructor[leon.collection.Nil[_]])//,
+  //The boolean indicates whether it extends WebElement
+  val fullNameToConstructorMap : Map[String, (universe.MethodMirror, Boolean)] = Map(
+    ("leon.webDSL.webDescription.WebPage", (getReflectConstructor[WebPage], false)),
+    ("leon.webDSL.webDescription.Div", (getReflectConstructor[Div], true)),
+    ("leon.webDSL.webDescription.Header", (getReflectConstructor[Header], true)),
+    ("leon.webDSL.webDescription.Paragraph", (getReflectConstructor[Paragraph], true)),
+    ("leon.webDSL.webDescription.HLOne", (getReflectConstructor[HLOne], false)),
+    ("leon.webDSL.webDescription.HLTwo", (getReflectConstructor[HLTwo], false)),
+    ("leon.webDSL.webDescription.HLThree", (getReflectConstructor[HLThree], false)),
+    ("leon.webDSL.webDescription.HLFour", (getReflectConstructor[HLFour], false)),
+    ("leon.webDSL.webDescription.HLFive", (getReflectConstructor[HLFive], false)),
+    ("leon.webDSL.webDescription.HLSix", (getReflectConstructor[HLSix], false)),
+    ("leon.collection.Cons", (getReflectConstructor[leon.collection.Cons[_]], false)),
+    ("leon.collection.Nil", (getReflectConstructor[leon.collection.Nil[_]], false))//,
 //    ("leon.lang.Map", getReflectConstructor[leon.lang.Map[_,_]])
   )
 

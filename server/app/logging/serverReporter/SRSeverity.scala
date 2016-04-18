@@ -1,4 +1,4 @@
-package serverReporter
+package logging.serverReporter
 
 /**
   * Created by dupriez on 2/15/16.

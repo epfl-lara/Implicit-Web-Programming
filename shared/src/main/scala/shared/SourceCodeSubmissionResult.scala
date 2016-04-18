@@ -1,8 +1,8 @@
 package shared
 
-import leon.webDSL.webDescription.{WebPage}
+import leon.webDSL.webDescription.{WebPage, WebPageWithIDedWebElements}
 
 /**
   * Created by dupriez on 3/10/16.
   */
-case class SourceCodeSubmissionResult(webPageOpt: Option[WebPage], evaluationLog: String)
+case class SourceCodeSubmissionResult(webPageWithIDedWebElementsOpt: Option[WebPageWithIDedWebElements], evaluationLog: String)

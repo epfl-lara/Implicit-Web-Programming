@@ -4,8 +4,9 @@ import bootstrapSourceCode.BootstrapSourceCodeGetter
 import leon.purescala.Definitions.Program
 import memory.Memory
 import programEvaluator.{LeonProgramMaker, ProgramEvaluator}
-import serverReporter.ServerReporter
+import logging.serverReporter.{Info, ServerReporter}
 import shared.{Api, SourceCodeSubmissionResult, StringModification, StringModificationSubmissionResult}
+import stringModification.StringModificationProcessor
 
 /**
   * Created by dupriez on 2/12/16.
@@ -24,9 +25,9 @@ class ApiService extends Api{
     LeonProgramMaker.makeProgram(sourceCode, serverReporter) match {
       case Some(program) =>
         ProgramEvaluator.evaluateAndConvertResult(program, sourceCode, serverReporter) match {
-          case (Some((webPage, sourceMap)), evaluationLog) =>
+          case (Some((webPageWithIDedWebElement, sourceMap)), evaluationLog) =>
             Memory.sourceMap = sourceMap
-            return SourceCodeSubmissionResult(Some(webPage), evaluationLog)
+            return SourceCodeSubmissionResult(Some(webPageWithIDedWebElement), evaluationLog)
           case (None, evaluationLog) =>
             Memory.sourceMap = null
             return SourceCodeSubmissionResult(None,
@@ -44,6 +45,24 @@ class ApiService extends Api{
 
 
   override def submitStringModification(stringModification: StringModification): StringModificationSubmissionResult = {
-    StringModificationSubmissionResult(Some("hey"), "")
+    val sReporter = new ServerReporter
+    sReporter.printReportsInConsole = true
+    sReporter.report(Info,
+      s"""
+         |Received a string modification from the client:
+         |  webElementID: ${stringModification.webElementID}
+         |  modified WebAttribute${stringModification.modifiedWebAttribute}
+         |  new value: ${stringModification.newValue}
+       """.stripMargin
+    )
+    val weID = stringModification.webElementID
+    val weExprFromSourceMap = Memory.sourceMap.webElementIDToExpr(weID)
+    sReporter.report(Info,
+      s"""Here's what has been found in the sourceMap for the webElementID $weID:
+         |${weExprFromSourceMap}
+       """.stripMargin)
+
+    StringModificationProcessor.process(stringModification, sReporter)
+//    StringModificationSubmissionResult(Some("hey"), "")
   }
 }

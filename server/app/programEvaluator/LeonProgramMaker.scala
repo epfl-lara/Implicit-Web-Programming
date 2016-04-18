@@ -4,7 +4,7 @@ import leon.frontends.scalac.{ExtractionPhase, ClassgenPhase}
 import leon.utils.TemporaryInputPhase
 import leon.{LeonFatalError, LeonContext, Pipeline, DefaultReporter}
 import leon.purescala.Definitions.{CaseClassDef, Program}
-import serverReporter.{ServerReporter, Info, Error}
+import logging.serverReporter.{ServerReporter, Info, Error}
 import shared.SourceCodeSubmissionResult
 
 /**
@@ -23,7 +23,7 @@ object LeonProgramMaker {
     //        PrintTreePhase("Output of leon")
 
     //    Commented to test the webpageDSLBis
-    //    relativePathsToWebpageBuildingDSLFiles.foreach(pathToFile => serverReporter.report(Info, "Additional file provided to leon: " + pathToFile))
+    //    relativePathsToWebpageBuildingDSLFiles.foreach(pathToFile => logging.serverReporter.report(Info, "Additional file provided to leon: " + pathToFile))
 
     //Add a line importing the shared.webpageBuildingDSL package to the source code string
     //    Partially Commented to test the webpageDSLBis
@@ -57,6 +57,13 @@ object LeonProgramMaker {
           None
       }
     }
-    runPipeline(pipeline, pipelineInput, ctx)
+    val result = runPipeline(pipeline, pipelineInput, ctx)
+    result match {
+      case Some(program) =>
+        sReporter.report(Info, "Program: "+program, 1)
+        result
+      case _ =>
+        result
+    }
   }
 }

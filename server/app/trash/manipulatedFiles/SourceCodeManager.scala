@@ -3,7 +3,7 @@ package trash.manipulatedFiles
 import java.io._
 import javax.print.attribute.standard.Severity
 
-import serverReporter._
+import logging.serverReporter._
 
 import scala.io.BufferedSource
 
@@ -56,6 +56,6 @@ object SourceCodeManager {
 //    pw.write("Hello, world")
 //    pw.close
 //
-//    serverReporter.report(Info, "sourceCode rewritten")
+//    logging.serverReporter.report(Info, "sourceCode rewritten")
   }
 }
