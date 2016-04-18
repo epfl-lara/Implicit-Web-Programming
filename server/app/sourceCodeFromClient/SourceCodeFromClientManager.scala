@@ -17,6 +17,7 @@ object SourceCodeFromClientManager {
   def pathToSourceCodeFile = pathToManipulatedFilesFolder + "/" + pathFromManipulatedFilesFolderToSourceCodeFile
 
   def getSourceCode(serverReporter: ServerReporter): String = {
+    val sReporter = serverReporter.startProcess("Getting Source Code")
     serverReporter.report(Info, "Serving SourceCode...")
     var error = false
     val sourceCodeFile: BufferedSource = try {

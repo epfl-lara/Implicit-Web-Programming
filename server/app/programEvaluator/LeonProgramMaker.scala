@@ -11,8 +11,8 @@ import shared.SourceCodeSubmissionResult
   * Created by dupriez on 3/22/16.
   */
 object LeonProgramMaker {
-  def makeProgram(sourceCode: String, sReporter: ServerReporter) : Option[Program] = {
-    sReporter.report(Info, "Turning the sourceCode into a leon Program...")
+  def makeProgram(sourceCode: String, serverReporter: ServerReporter) : Option[Program] = {
+    val sReporter = serverReporter.startProcess("Turning the sourceCode into a leon Program")
     val leonReporter = new DefaultReporter(Set())
     val ctx = leon.Main.processOptions(Seq()).copy(reporter = leonReporter)
     ctx.interruptManager.registerSignalHandler()
@@ -22,22 +22,22 @@ object LeonProgramMaker {
     //new PreprocessingPhase(xlangF, gencF)
     //        PrintTreePhase("Output of leon")
 
-    //    Commented to test the webpageDSLBis
-    //    relativePathsToWebpageBuildingDSLFiles.foreach(pathToFile => logging.serverReporter.report(Info, "Additional file provided to leon: " + pathToFile))
+    def addImport(sourceCode: String) = {
+      sReporter.report(Info, "Adding imports to source code: " + "import leon.collection._, "+"import leon.webDSL.webDescription._")
+      "import leon.collection._" + sys.props("line.separator") +
+      "import leon.webDSL.webDescription._" + sys.props("line.separator") +
+      sourceCode
+    }
 
-    //Add a line importing the shared.webpageBuildingDSL package to the source code string
-    //    Partially Commented to test the webpageDSLBis
-    val sourceCodeWithImport = /*WebpageBuildingDSLFilesPathsProvider.importLine + sys.props("line.separator") +*/ sourceCode
+    val pipelineInput = TemporaryInputPhase(ctx, (List(addImport(sourceCode)), List()))
 
-    val pipelineInput = TemporaryInputPhase(ctx, (List(sourceCodeWithImport), List()))
-
-    case class PipelineRunResult(val msg: String, val programOption: Option[Program])
+    case class PipelineRunResult(msg: String, programOption: Option[Program])
 
     def runPipeline(pipeline: Pipeline[List[String], Program], pipelineInput: List[String], leonContext: LeonContext) : Option[Program] = {
       try {
-        sReporter.report(Info, "Running leon pipeline", 1)
+        sReporter.report(Info, "Running leon pipeline")
         val (context, program) = pipeline.run(leonContext,pipelineInput)
-        sReporter.report(Info, "Leon pipeline run successful", 1)
+        sReporter.report(Info, "Leon pipeline run ended")
         Some(program)
       } catch {
         case e: LeonFatalError =>
@@ -49,21 +49,20 @@ object LeonProgramMaker {
           //            case None =>
           //          }
           //          return SuccessCompile("<h2>Error here:</h2>" + e.getClass + "<br>" + e.getMessage + "<br>" + e.getStackTrace.map(_.toString).mkString("<br>"))
-          sReporter.report(Error, "Leon pipeline run failed, LeonFatalError caught", 1)
+          sReporter.report(Error, "Leon pipeline run failed, LeonFatalError caught")
           None
         case e: Throwable =>
           //          return SuccessCompile("<h2>Error here:</h2>" + e.getClass + "<br>" + e.getMessage + "<br>" + e.getStackTrace.map(_.toString).mkString("<br>"))
-          sReporter.report(Error, "Leon pipeline run failed, exception other than LeonFatalError caught", 1)
+          sReporter.report(Error, "Leon pipeline run failed, exception other than LeonFatalError caught")
           None
       }
     }
-    val result = runPipeline(pipeline, pipelineInput, ctx)
-    result match {
+    runPipeline(pipeline, pipelineInput, ctx) match {
       case Some(program) =>
-        sReporter.report(Info, "Program: "+program, 1)
-        result
+        sReporter.report(Info, "Generated Program: "+program)
+        Some(program)
       case _ =>
-        result
+        None
     }
   }
 }

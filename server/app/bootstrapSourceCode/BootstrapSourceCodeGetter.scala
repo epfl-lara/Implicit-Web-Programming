@@ -12,28 +12,27 @@ import scala.io.BufferedSource
 object BootstrapSourceCodeGetter {
   val pathToBootstrapSourceCodeFile = "server/app/bootstrapSourceCode/BootstrapSourceCode"
 
-  def getBootstrapSourceCode(serverReporter: ServerReporter): String = {
+  def getBootstrapSourceCode(serverReporter: ServerReporter): Option[String] = {
     //    val pathToLeonInput = "src/main/scala-2.11/trash.manipulatedFiles/SourceCode.txt"
-    serverReporter.report(Info, "Serving bootstrap Source Code...")
-    var error = false
-    val bootstrapSourceCodeFile: BufferedSource = try {
-      scala.io.Source.fromFile(pathToBootstrapSourceCodeFile)
+    val sReporter = serverReporter.startProcess("Getting bootstrap source code")
+    val bootstrapSourceCodeFile: Option[BufferedSource] = try {
+      Some(scala.io.Source.fromFile(pathToBootstrapSourceCodeFile))
     } catch {
       case e: java.io.FileNotFoundException => {
         //        mainReporter.error("File opening error, \"" + pathToLeonInput + "\" not found")
-        serverReporter.report(Error, "ERROR: File opening error, \"" + pathToBootstrapSourceCodeFile + "\" not found, \":-(\" sent back to caller")
-        error = true
-        new BufferedSource(new ByteArrayInputStream(Array(':', '-', '(')))
+        sReporter.report(Error, "File opening error, \"" + pathToBootstrapSourceCodeFile + "\" not found")
+        None
       }
     }
-    if (!error) {
-      serverReporter.report(Info, "BootstrapSourceCode file found")
+    bootstrapSourceCodeFile match {
+      case None =>
+        sReporter.report(Error, "Failure")
+        None
+      case Some(bufferedSource) =>
+        val bootstrapSourceCode = bufferedSource.mkString
+        bufferedSource.close
+        sReporter.report(Info, "Success")
+        Some(bootstrapSourceCode)
     }
-    else {
-      serverReporter.report(Info, "Error")
-    }
-    val bootstrapSourceCode = bootstrapSourceCodeFile.mkString
-    bootstrapSourceCodeFile.close
-    bootstrapSourceCode
   }
 }

@@ -5,23 +5,25 @@ import leon.purescala.Definitions.Program
 import memory.Memory
 import programEvaluator.{LeonProgramMaker, ProgramEvaluator}
 import logging.serverReporter.{Info, ServerReporter}
-import shared.{Api, SourceCodeSubmissionResult, StringModification, StringModificationSubmissionResult}
-import stringModification.StringModificationProcessor
+import shared._
+import trash.stringModification.StringModificationProcessor
 
 /**
   * Created by dupriez on 2/12/16.
   */
 class ApiService extends Api{
-  override def getBootstrapSourceCode(): String = {
+  override def getBootstrapSourceCode(): Either[String, ServerError] = {
     val serverReporter = new ServerReporter
     val bootstrapSourceCode = BootstrapSourceCodeGetter.getBootstrapSourceCode(serverReporter)
-    serverReporter.flushMessageQueue(msg => println(msg))
-    bootstrapSourceCode
+//    serverReporter.flushMessageQueue(msg => println(msg))
+    bootstrapSourceCode match {
+      case Some(sourceCode) => Left(sourceCode)
+      case None => Right(UnableToFetchBootstrapSourceCode())
+    }
   }
 
   override def submitSourceCode(sourceCode: String): SourceCodeSubmissionResult = {
     val serverReporter = new ServerReporter
-    serverReporter.printReportsInConsole = true
     LeonProgramMaker.makeProgram(sourceCode, serverReporter) match {
       case Some(program) =>
         ProgramEvaluator.evaluateAndConvertResult(program, sourceCode, serverReporter) match {
@@ -46,10 +48,8 @@ class ApiService extends Api{
 
   override def submitStringModification(stringModification: StringModification): StringModificationSubmissionResult = {
     val sReporter = new ServerReporter
-    sReporter.printReportsInConsole = true
     sReporter.report(Info,
-      s"""
-         |Received a string modification from the client:
+      s"""Received a string modification from the client:
          |  webElementID: ${stringModification.webElementID}
          |  modified WebAttribute${stringModification.modifiedWebAttribute}
          |  new value: ${stringModification.newValue}

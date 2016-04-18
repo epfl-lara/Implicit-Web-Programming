@@ -1,4 +1,4 @@
-package stringModification
+package trash.stringModification
 
 import logging.OptionValWithLog
 import logging.serverReporter.{Info, ServerReporter}

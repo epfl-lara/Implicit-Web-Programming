@@ -234,7 +234,16 @@ object ScalaJS_Main extends js.JSApp {
 //      updateEditorContent()
       AjaxClient[Api].getBootstrapSourceCode().call().onComplete {
         case Failure(exception) => {println("Unable to fetch bootstrap source code: " + exception.getMessage)}
-        case Success(bootstrapSourceCode) => {println("ajax bootstrap source code request success"); editor.setValue(bootstrapSourceCode)}
+        case Success(serverReturn) =>
+          serverReturn match {
+            case Left(bootstrapSourceCode) =>
+              println("ajax bootstrap source code request success")
+              editor.setValue(bootstrapSourceCode)
+            case Right(serverError) =>
+              println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
+          }
+
+
       }
       val changeCallbackFunction: js.Function1[scala.scalajs.js.Any, Unit] = aceEditorChangeCallback _
       editor.getSession().on("change", changeCallbackFunction)
