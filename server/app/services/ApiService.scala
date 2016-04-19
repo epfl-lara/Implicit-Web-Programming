@@ -6,7 +6,7 @@ import memory.Memory
 import programEvaluator.{LeonProgramMaker, ProgramEvaluator}
 import logging.serverReporter.{Info, ServerReporter}
 import shared._
-import trash.stringModification.StringModificationProcessor
+import stringModification.StringModificationProcessor
 
 /**
   * Created by dupriez on 2/12/16.

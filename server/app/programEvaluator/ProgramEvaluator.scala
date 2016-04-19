@@ -10,6 +10,7 @@ import leon.purescala.Definitions.{CaseClassDef, Program}
 import leon.purescala.Expressions._
 import leon.purescala.Types.CaseClassType
 import leon.webDSL.webDescription._
+import logging.OptionValWithLog
 import memory.Memory
 import logging.serverReporter.Error
 import logging.serverReporter._
@@ -126,18 +127,25 @@ object ProgramEvaluator {
         }
       }
 
-      def buildSourceMapAndGiveIDsToWebElements(webPage: WebPage, resultEvaluationTreeExpr: Expr, sourceCode: String, serverReporter: ServerReporter): (WebPageWithIDedWebElements, SourceMap) = {
+      def buildSourceMapAndGiveIDsToWebElements(webPage: WebPage, resultEvaluationTreeExpr: Expr, sourceCode: String, program: Program, serverReporter: ServerReporter): (WebPageWithIDedWebElements, SourceMap) = {
         val sReporter = serverReporter.startFunction("buildSourceMapAndGiveIDsToWebElements")
-        val sourceMap = new SourceMap(sourceCode)
+        val sourceMap = new SourceMap(sourceCode, program)
         val bootstrapWebElementLeonList: leon.collection.List[WebElement] = webPage match {
           case WebPage(webPAttr, sons) => sons
         }
-        val webPageCaseClassDef = lookupCaseClass(program)("leon.webDSL.webDescription.WebPage")
-        val paragraphCaseClassDef = lookupCaseClass(program)("leon.webDSL.webDescription.Paragraph")
-        val headerCaseClassDef = lookupCaseClass(program)("leon.webDSL.webDescription.Header")
-        val divCaseClassDef = lookupCaseClass(program)("leon.webDSL.webDescription.Div")
-        val consCaseClassDef = lookupCaseClass(program)("leon.collection.Cons")
-        val nilCaseClassDef = lookupCaseClass(program)("leon.collection.Nil")
+        def getCaseClassDefValOrFail(optionValWithLog: OptionValWithLog[CaseClassDef]) : CaseClassDef = {
+          optionValWithLog match{
+            case OptionValWithLog(Some(value), log) => value
+            case OptionValWithLog(None, log) =>
+              throw ExceptionDuringConversion(log)
+          }
+        }
+        val webPageCaseClassDef = getCaseClassDefValOrFail(sourceMap.webPage_webElementCaseClassDef(sReporter))
+        val paragraphCaseClassDef = getCaseClassDefValOrFail(sourceMap.paragraph_webElementCaseClassDef(sReporter))
+        val headerCaseClassDef = getCaseClassDefValOrFail(sourceMap.header_webElementCaseClassDef(sReporter))
+        val divCaseClassDef = getCaseClassDefValOrFail(sourceMap.div_webElementCaseClassDef(sReporter))
+        val consCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonCons_caseClassDef(sReporter))
+        val nilCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonNil_caseClassDef(sReporter))
 //        println("paragraph caseClassDef: " + paragraphCaseClassDef)
 //        println("div caseClassDef" + divCaseClassDef)
 //        println("cons caseClassDef" + consCaseClassDef)
@@ -243,7 +251,7 @@ object ProgramEvaluator {
 
       //WebPage without the contained WebElement having proper IDs
       val webPage = unExpr(sReporter.startFunction("Unexpring WebPage Expr: "+webPageEvaluatedExpr))(webPageEvaluatedExpr).asInstanceOf[WebPage]
-      val (webPageWithIDedWebElements, sourceMap) = buildSourceMapAndGiveIDsToWebElements(webPage, webPageEvaluationTreeExpr, sourceCode, sReporter)
+      val (webPageWithIDedWebElements, sourceMap) = buildSourceMapAndGiveIDsToWebElements(webPage, webPageEvaluationTreeExpr, sourceCode, program, sReporter)
       sReporter.report(Info, "WebPageWithIDedWebElements: " + webPageWithIDedWebElements.toString)
 //      val d =  WebPageWithIDedWebElements(Nil(),Cons(WebElementWithID(Header(HeAdEr,HLTwo()),1),Cons(WebElementWithID(Paragraph(text),2),Cons(WebElementWithID(Div(Cons(Paragraph(text2),Nil())),3),Nil()))))
 
