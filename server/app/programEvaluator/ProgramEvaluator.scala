@@ -210,19 +210,19 @@ object ProgramEvaluator {
             case Paragraph(text: String) =>
               sanityCheck(webElement, correspondingUnevaluatedExpr, paragraphCaseClassDef, "Paragraph", sReporter)
               val id = generateID()
-              sourceMap.addMapping(id, correspondingUnevaluatedExpr)
+              sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
               WebElementWithID(webElement, id)
             case Header(text: String, level: HeaderLevel) =>
               sanityCheck(webElement, correspondingUnevaluatedExpr, headerCaseClassDef, "Header", sReporter)
               val id = generateID()
-              sourceMap.addMapping(id, correspondingUnevaluatedExpr)
+              sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
               WebElementWithID(webElement, id)
             case Div(sons: leon.collection.List[WebElement]) =>
               sanityCheck(webElement, correspondingUnevaluatedExpr, divCaseClassDef, "Div", sReporter)
               correspondingUnevaluatedExpr match {
                 case CaseClass(CaseClassType(`divCaseClassDef`, targs), args) => {
                   val id = generateID()
-                  sourceMap.addMapping(id, correspondingUnevaluatedExpr)
+                  sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
                   val sonsWebElemCorrespUnevalExprCouplLeonList = sons.zip(exprOfLeonListOfExprToLeonListOfExpr(args(0)))
                   val iDedSons : leon.collection.List[WebElement]= sonsWebElemCorrespUnevalExprCouplLeonList.map(
                     {case (webElem, correspUnevalExpr) => giveIDToWebElementsAndFillSourceMap(sourceMap, sReporter)(webElem, correspUnevalExpr)}

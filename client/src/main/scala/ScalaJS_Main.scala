@@ -345,7 +345,7 @@ object ScalaJS_Main extends js.JSApp {
             }
           case Paragraph(/*webElID,*/ text) =>
             //TODO: change "heyhey" to the value of the text of the paragraph
-            val textChangeCallBack = Callback{ println("paragraph changed"); submitStringModification(webElID, Text, "heyhey")}
+            val textChangeCallBack = Callback{ println("paragraph changed")/*; submitStringModification(webElID, Text, "heyhey")*/}
             val p = <.p(
               text,
               impWebProgIDAttr := webElID,
