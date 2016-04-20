@@ -73,12 +73,13 @@ object ScalaJS_Main extends js.JSApp {
       case Success(stringModificationSubmissionResult) => {
         println("Server sent something in response to a string modification submission")
         stringModificationSubmissionResult match {
-          case StringModificationSubmissionResult(Some(newSourceCode), log) => {
+          case StringModificationSubmissionResult(Some((newSourceCode, webPageWithIDedWebElements)), log) => {
             println(
               s"""
                  |Received new source code: $newSourceCode
                   """.stripMargin)
-//            renderWebPage(webPage, "htmlDisplayerDiv")
+            renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
+            AceEditor.setEditorValue(newSourceCode)
           }
           case StringModificationSubmissionResult(None, log) => {
             println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
@@ -265,6 +266,15 @@ object ScalaJS_Main extends js.JSApp {
       aceEditor match {
         case Some(e) => e.getValue()
         case None => "[ERROR] fun getEditorValue was called while there was no aceEditor"
+      }
+    }
+
+    def setEditorValue(value: String) = {
+      aceEditor match {
+        case Some(e) =>
+//          println("Setting Ace Editor value to: " + value)
+          e.setValue(value)
+        case None => "[ERROR] fun setEditorValue was called while there was no aceEditor"
       }
     }
 

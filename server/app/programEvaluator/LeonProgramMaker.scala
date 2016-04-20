@@ -23,9 +23,9 @@ object LeonProgramMaker {
     //        PrintTreePhase("Output of leon")
 
     def addImport(sourceCode: String) = {
-      sReporter.report(Info, "Adding imports to source code: " + "import leon.collection._, "+"import leon.webDSL.webDescription._")
-      "import leon.collection._" + sys.props("line.separator") +
-      "import leon.webDSL.webDescription._" + sys.props("line.separator") +
+//      sReporter.report(Info, "Adding imports to source code: " + "import leon.collection._, "+"import leon.webDSL.webDescription._")
+//      "import leon.collection._" + sys.props("line.separator") +
+//      "import leon.webDSL.webDescription._" + sys.props("line.separator") +
       sourceCode
     }
 
