@@ -26,6 +26,10 @@ import autowire._
 object ScalaJS_Main extends js.JSApp {
   import shared.Picklers._
 
+//  An attribute that SHOULD NOT be used by the end user, whose purpose is to serve as id for the html elements of the web interface
+  val reservedAttributeForImplicitWebProgrammingID = "data-reservedattributeforimplicitwebprogrammingid".reactAttr
+  val reservedAttributeForImplicitWebProgrammingID_name = "data-reservedattributeforimplicitwebprogrammingid"
+
   def main(): Unit = {
     //    println("method main of ScalaJSExample is running")
     //    dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
@@ -38,7 +42,7 @@ object ScalaJS_Main extends js.JSApp {
     submitButtonAction() */
   }
 
-  def submitButtonAction() = {
+  def submitSourceCode() = {
     println("submit source code change")
     AjaxClient[Api].submitSourceCode(AceEditor.getEditorValue).call().onComplete {
       case Failure(exception) => {println("error during submission of the source code: " + exception)}
@@ -53,8 +57,10 @@ object ScalaJS_Main extends js.JSApp {
                  |  Number of webElements: ${webPage.sons.size}
                   """.stripMargin)
 //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
-            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
+//            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
+            SourceCodeSubmitButton.removeCustomBackground()
             renderWebPage(webPage, "htmlDisplayerDiv")
+            AceEditor.removeAceEdOnChangeCallback()
           }
           case SourceCodeSubmissionResult(None, log) => {
             println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
@@ -62,9 +68,6 @@ object ScalaJS_Main extends js.JSApp {
         }
       }
     }
-  }
-  def submitButtonCallback = Callback{
-      submitButtonAction()
   }
 
   def submitStringModification(webElementID: Int, modifiedAttribute: StringWebAttribute, newValue: String) = {
@@ -80,7 +83,11 @@ object ScalaJS_Main extends js.JSApp {
                  |Received new source code: $newSourceCode
                   """.stripMargin)
             renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
+//            remove the standard onChange callback of the Ace Editor, so that the "submit source code change" button does not turn red
+//            because of the following call to AceEditor.setEditorValue
+            AceEditor.removeAceEdOnChangeCallback()
             AceEditor.setEditorValue(newSourceCode)
+            AceEditor.activateAceEdOnChangeCallback_standard()
           }
           case StringModificationSubmissionResult(None, log) => {
             println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
@@ -90,17 +97,31 @@ object ScalaJS_Main extends js.JSApp {
     }
   }
 
+  object SourceCodeSubmitButton {
+    private val idOfThis = "sourceCodeSubmitButton"
+    val scalaJSButton = <.button(
+      reservedAttributeForImplicitWebProgrammingID := idOfThis,
+      ^.onClick --> Callback{submitSourceCode()},
+      "Submit source code change"
+    )
+    private def getTheJSObject = {
+      dom.document.querySelector("["+reservedAttributeForImplicitWebProgrammingID_name+" = "+idOfThis+"]")
+    }
+    def turnBackgroundRed() = {
+      getTheJSObject.setAttribute("style", "background-color:red")
+    }
+    def removeCustomBackground() = {
+      getTheJSObject.setAttribute("style", "background-color:none")
+    }
+  }
+
   def fillSourceCodeDiv() = {
     val destinationDivId = "SourceCodeDiv"
 
     val title = <.h1("Source Code")
 
 
-    val submitButton = <.button(
-      ^.id := "sourceCodeSubmitButton",
-      ^.onClick --> submitButtonCallback,
-      "Submit source code change"
-    )
+    val submitButton = SourceCodeSubmitButton.scalaJSButton
 
     val aceEditorDiv = <.div(
       ^.id := "aceeditor",
@@ -212,7 +233,7 @@ object ScalaJS_Main extends js.JSApp {
   }
 
   object stringModificationFromContentEditableHandler {
-    def reportModification(weID: Int, modWebAttr: StringWebAttribute) = {
+    def reportModification(weID: Int, modWebAttr: StringWebAttribute= Text) = {
 
     }
   }
@@ -248,8 +269,9 @@ object ScalaJS_Main extends js.JSApp {
             case Left(bootstrapSourceCode) =>
               println("ajax bootstrap source code request success")
               setEditorValue(bootstrapSourceCode)
-              val changeCallbackFunction: js.Function1[scala.scalajs.js.Any, Unit] = aceEditorChangeCallback _
-              editor.getSession().on("change", changeCallbackFunction)
+              editor.getSession().on("change", aceEdOnChangeCallbackVal_master)
+//              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
+              activateAceEdOnChangeCallback_standard()
             case Right(serverError) =>
               println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
           }
@@ -288,6 +310,16 @@ object ScalaJS_Main extends js.JSApp {
       }
     }
 
+    def removeAceEdOnChangeCallback() = {
+      currentOnChangeCallback = DoNothing_OnChangeCallback.onChangeCallback
+//      currentOnChangeCallback = DoNothing_OnChangeCallback
+    }
+
+    def activateAceEdOnChangeCallback_standard() = {
+      currentOnChangeCallback = Standard_OnChangeCallback.onChangeCallback
+//      currentOnChangeCallback = Standard_OnChangeCallback
+    }
+
 //    @JSExport
 //    def setSourceCodeRequestWillBeRemoved() = {
 //      AjaxClient[Api].setSourceCode(getEditorValue).call().onComplete{
@@ -296,15 +328,37 @@ object ScalaJS_Main extends js.JSApp {
 //      }
 //    }
 
-    private def aceEditorChangeCallback(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit= {
-      println("ace change callback")
-      dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:red")
+    private trait OnChangeCallback {val onChangeCallback : js.Function1[scala.scalajs.js.Any, Unit]}
 
+    private var currentOnChangeCallback/*: OnChangeCallback */= DoNothing_OnChangeCallback.onChangeCallback
+    private val aceEdOnChangeCallbackVal_master/*: js.Function1[scala.scalajs.js.Any, Unit]*/ = aceEdOnChangeCallback_master _
+    private def aceEdOnChangeCallback_master(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit = {
+      currentOnChangeCallback("useless")
+//      println("masterCallback: currentOnChangeCallback=" +currentOnChangeCallback)
+//      if(currentOnChangeCallback == Standard_OnChangeCallback) {
+//        aceEdOnChangeCallback_standard("useless")
+//      }
+//      else{
+//        aceEdOnChangeCallback_doNothing("useless")
+//      }
+    }
+
+    private case object Standard_OnChangeCallback extends OnChangeCallback {override val onChangeCallback: js.Function1[scala.scalajs.js.Any, Unit] = aceEdOnChangeCallback_standard _}
+    private def aceEdOnChangeCallback_standard(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit= {
+//      println("AceEditor onChange callback: standard")
+      SourceCodeSubmitButton.turnBackgroundRed()
+//      dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:red")
 //      AjaxClient[Api].setSourceCode(getEditorValue).call().onComplete{
 //        case Failure(exception) => {println("setSourceCode request failed: " + exception.getMessage)}
 //        case Success(unit) => {println("setSourceCode request successful")}
 //      }
 //      setSourceCodeRequestsAbsorber.newRequest()
+    }
+
+    private case object DoNothing_OnChangeCallback extends OnChangeCallback {override val onChangeCallback: js.Function1[scala.scalajs.js.Any, Unit] = aceEdOnChangeCallback_doNothing _}
+    private def aceEdOnChangeCallback_doNothing(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit = {
+//      Do Nothing
+//      println("AceEditor onChange callback: do nothing")
     }
   }
 
@@ -329,6 +383,7 @@ object ScalaJS_Main extends js.JSApp {
 
   /**
     * This function should only be given WebElementWithID
+    *
     * @param webElWithID
     * @return
     */
@@ -400,3 +455,6 @@ object ScalaJS_Main extends js.JSApp {
   }
 
 }
+//Hello world
+//Content editable
+//Formulaire -> requete bdd
