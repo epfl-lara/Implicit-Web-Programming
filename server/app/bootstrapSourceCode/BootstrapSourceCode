@@ -1,12 +1,15 @@
 import leon.collection._
 import leon.webDSL.webDescription._
+import leon.webDSL.webBuilding._
+import implicits._
 
 object Main {
     //This function will be called by the evaluator. It has to return a WebPage
     def main() = {
-      val p = Paragraph("text")
-      val h = Header("HeAdEr", HLTwo())
-      val w = WebPage(List(), List(h,p))
+      val p = <.p("text")
+      val h = <.h2("HeAdEr")
+      val i = <.input(^.tpe := "button", ^.value := "Press me !")
+      val w = WebPage(List(), List(h, p, i))
       w
     }
 }

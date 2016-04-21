@@ -49,6 +49,9 @@ class SourceMap(val sourceCode: String, val program: Program){
   def header_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
     lookupCaseClass(program, "leon.webDSL.webDescription.Header", serverReporter)
   }
+  def input_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
+    lookupCaseClass(program, "leon.webDSL.webDescription.Input", serverReporter)
+  }
   def div_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
     lookupCaseClass(program, "leon.webDSL.webDescription.Div", serverReporter)
   }

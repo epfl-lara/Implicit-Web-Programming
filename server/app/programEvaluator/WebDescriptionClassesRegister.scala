@@ -23,6 +23,7 @@ object WebDescriptionClassesRegister {
     ("leon.webDSL.webDescription.HLFour", (getReflectConstructor[HLFour], false)),
     ("leon.webDSL.webDescription.HLFive", (getReflectConstructor[HLFive], false)),
     ("leon.webDSL.webDescription.HLSix", (getReflectConstructor[HLSix], false)),
+    ("leon.webDSL.webDescription.Input", (getReflectConstructor[Input], true)),
     ("leon.collection.Cons", (getReflectConstructor[leon.collection.Cons[_]], false)),
     ("leon.collection.Nil", (getReflectConstructor[leon.collection.Nil[_]], false))//,
 //    ("leon.lang.Map", getReflectConstructor[leon.lang.Map[_,_]])

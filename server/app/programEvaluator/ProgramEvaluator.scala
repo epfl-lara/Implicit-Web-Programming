@@ -143,6 +143,7 @@ object ProgramEvaluator {
         val webPageCaseClassDef = getCaseClassDefValOrFail(sourceMap.webPage_webElementCaseClassDef(sReporter))
         val paragraphCaseClassDef = getCaseClassDefValOrFail(sourceMap.paragraph_webElementCaseClassDef(sReporter))
         val headerCaseClassDef = getCaseClassDefValOrFail(sourceMap.header_webElementCaseClassDef(sReporter))
+        val inputCaseClassDef = getCaseClassDefValOrFail(sourceMap.input_webElementCaseClassDef(sReporter))
         val divCaseClassDef = getCaseClassDefValOrFail(sourceMap.div_webElementCaseClassDef(sReporter))
         val consCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonCons_caseClassDef(sReporter))
         val nilCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonNil_caseClassDef(sReporter))
@@ -214,6 +215,11 @@ object ProgramEvaluator {
               WebElementWithID(webElement, id)
             case Header(text: String, level: HeaderLevel) =>
               sanityCheck(webElement, correspondingUnevaluatedExpr, headerCaseClassDef, "Header", sReporter)
+              val id = generateID()
+              sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
+              WebElementWithID(webElement, id)
+            case Input(tpe, placeHolder, text) =>
+              sanityCheck(webElement, correspondingUnevaluatedExpr, inputCaseClassDef, "Input", sReporter)
               val id = generateID()
               sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
               WebElementWithID(webElement, id)

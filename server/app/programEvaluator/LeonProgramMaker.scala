@@ -6,6 +6,8 @@ import leon.{LeonFatalError, LeonContext, Pipeline, DefaultReporter}
 import leon.purescala.Definitions.{CaseClassDef, Program}
 import logging.serverReporter.{ServerReporter, Info, Error}
 import shared.SourceCodeSubmissionResult
+import leon.purescala.MethodLifting
+import leon.utils.PreprocessingPhase
 
 /**
   * Created by dupriez on 3/22/16.
@@ -18,8 +20,9 @@ object LeonProgramMaker {
     ctx.interruptManager.registerSignalHandler()
     val pipeline: Pipeline[List[String], Program] =
       ClassgenPhase andThen
-        ExtractionPhase /*andThen*/
-    //new PreprocessingPhase(xlangF, gencF)
+        ExtractionPhase andThen
+        MethodLifting
+        //new PreprocessingPhase()
     //        PrintTreePhase("Output of leon")
 
     def addImport(sourceCode: String) = {
