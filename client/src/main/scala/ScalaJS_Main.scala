@@ -53,6 +53,7 @@ object ScalaJS_Main extends js.JSApp {
                  |  Number of webElements: ${webPage.sons.size}
                   """.stripMargin)
 //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
+            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
             renderWebPage(webPage, "htmlDisplayerDiv")
           }
           case SourceCodeSubmissionResult(None, log) => {
@@ -96,8 +97,9 @@ object ScalaJS_Main extends js.JSApp {
 
 
     val submitButton = <.button(
-    ^.onClick --> submitButtonCallback,
-    "Submit source code change"
+      ^.id := "sourceCodeSubmitButton",
+      ^.onClick --> submitButtonCallback,
+      "Submit source code change"
     )
 
     val aceEditorDiv = <.div(
@@ -209,6 +211,12 @@ object ScalaJS_Main extends js.JSApp {
     ReactDOM.render(divContent, document.getElementById(destinationDivId))
   }
 
+  object stringModificationFromContentEditableHandler {
+    def reportModification(weID: Int, modWebAttr: StringWebAttribute) = {
+
+    }
+  }
+
 //  def fetchAndUseSourceCode(whatToDoWithSourceCode: String => Unit) = {
 ////    var sourceCode = ""
 //    AjaxClient[Api].getSourceCode().call().onComplete {
@@ -239,15 +247,16 @@ object ScalaJS_Main extends js.JSApp {
           serverReturn match {
             case Left(bootstrapSourceCode) =>
               println("ajax bootstrap source code request success")
-              editor.setValue(bootstrapSourceCode)
+              setEditorValue(bootstrapSourceCode)
+              val changeCallbackFunction: js.Function1[scala.scalajs.js.Any, Unit] = aceEditorChangeCallback _
+              editor.getSession().on("change", changeCallbackFunction)
             case Right(serverError) =>
               println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
           }
 
 
       }
-      val changeCallbackFunction: js.Function1[scala.scalajs.js.Any, Unit] = aceEditorChangeCallback _
-      editor.getSession().on("change", changeCallbackFunction)
+
 
       //    val sourceCode = getSourceCode()
       //    println(sourceCode)
@@ -274,6 +283,7 @@ object ScalaJS_Main extends js.JSApp {
         case Some(e) =>
 //          println("Setting Ace Editor value to: " + value)
           e.setValue(value)
+          e.selection.clearSelection()
         case None => "[ERROR] fun setEditorValue was called while there was no aceEditor"
       }
     }
@@ -288,6 +298,8 @@ object ScalaJS_Main extends js.JSApp {
 
     private def aceEditorChangeCallback(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit= {
       println("ace change callback")
+      dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:red")
+
 //      AjaxClient[Api].setSourceCode(getEditorValue).call().onComplete{
 //        case Failure(exception) => {println("setSourceCode request failed: " + exception.getMessage)}
 //        case Success(unit) => {println("setSourceCode request successful")}

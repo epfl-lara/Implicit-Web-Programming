@@ -7,8 +7,9 @@ import leon.purescala.Definitions.CaseClassDef
 import leon.purescala.Expressions.{CaseClass, Expr, StringConcat, StringLiteral}
 import leon.purescala.Types.CaseClassType
 import leon.solvers.string.StringSolver
-import leon.solvers.string.StringSolver.{Assignment, Equation, Problem, StringForm}
+import leon.solvers.string.StringSolver._
 import leon.synthesis.FileInterface
+import leon.utils.Position
 import leon.webDSL.webDescription.{Header, Paragraph, Text, WebElement}
 import logging.OptionValWithLog
 import logging.serverReporter.{Debug, Info, ServerReporter}
@@ -99,25 +100,31 @@ object StringModificationProcessor {
       case CaseClass(CaseClassType(_, _), argSeq) => argSeq(argumentIndexOfModifiedStringWebAttrInWebElem)
     }
 
-    def textExprToStringForm(textExpr: Expr, identifierToTextExprMap: scala.collection.mutable.Map[Identifier, Expr]): StringForm = {
+    def textExprToStringFormAndAssignmentMap(textExpr: Expr, assignmentMap: Map[Identifier, String]=Map(), posToId: Map[Position, Identifier]=Map()): (StringForm, Map[Identifier, String], Map[Position, Identifier]) = {
       textExpr match {
         case StringLiteral(string) =>
-          val identifier = Common.FreshIdentifier("l:"+textExpr.getPos.line+",c:"+textExpr.getPos.col).copiedFrom(textExpr)
-          identifierToTextExprMap(identifier) = textExpr
-          List(Right(identifier))
-        case StringConcat(tExpr1, tExpr2) => textExprToStringForm(tExpr1,identifierToTextExprMap) ++ textExprToStringForm(tExpr2,identifierToTextExprMap)
+          val identifier = posToId.getOrElse(textExpr.getPos, Common.FreshIdentifier("l:"+textExpr.getPos.line+",c:"+textExpr.getPos.col).copiedFrom(textExpr))
+          (List(Right(identifier)), assignmentMap + (identifier -> string), posToId+(textExpr.getPos -> identifier))
+        case StringConcat(tExpr1, tExpr2) =>
+          textExprToStringFormAndAssignmentMap(tExpr1, assignmentMap, posToId) match {
+          case (strForm1, assignMap1, posToID1) =>
+            textExprToStringFormAndAssignmentMap(tExpr2, assignMap1, posToID1) match {
+              case (strForm2, assignMap2, posToID2) =>
+                (strForm1 ++ strForm2, assignMap2, posToID2)
+            }
+        }
       }
     }
 
     sReporter.report(Info, "Original text= " + originalText)
-    val identifierToTextExprMap: scala.collection.mutable.Map[Identifier, Expr] = scala.collection.mutable.Map()
-    val stringForm = textExprToStringForm(textExpr, identifierToTextExprMap)
+    val (stringForm, assignmentMap, _) = textExprToStringFormAndAssignmentMap(textExpr)
     sReporter.report(Info, "StringForm= " + stringForm)
     val problem: Problem = List((stringForm, newVal))
     sReporter.report(Info, "StringSolver problem: "+StringSolver.renderProblem(problem))
-    val solutionStream: Stream[Assignment] = StringSolver.solve(problem)
-    sReporter.report(Info, "First 5 StringSolver solutions: "+solutionStream.take(5).foldLeft("")((str, assignment)=>str+assignment.toString()))
-    val firstSol = solutionStream.headOption match{
+//    val solutionStream: Stream[Assignment] = StringSolver.solve(problem)
+    val solutions = solveMinChange(problem, assignmentMap)
+    sReporter.report(Info, "First 5 StringSolver solutions: "+solutions.take(5).foldLeft("")((str, assignment)=>str+assignment.toString()))
+    val firstSol = solutions.headOption match{
       case Some(value) => value
       case None => failure("StringSolver returned no solutions")
     }
