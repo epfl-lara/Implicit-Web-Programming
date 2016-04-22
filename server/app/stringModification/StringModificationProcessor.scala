@@ -35,7 +35,7 @@ object StringModificationProcessor {
       simplifyCaseSelect(CaseClassSelector(cct, expr, id))
     case CaseClassSelector(cct, inExpr, id) =>
       simplifyCaseSelect(CaseClassSelector(cct, simplifyCaseSelect(inExpr), id))
-    case CaseClassSelector(cct, ccs, id) => throw new Exception(s"Cannot partially evaluate $expr")
+    case _ => throw new Exception(s"Cannot partially evaluate $expr")
   }
 
   case class StringModificationProcessingException(msg:String) extends java.lang.Exception(msg, null)
@@ -120,9 +120,14 @@ object StringModificationProcessor {
     def textExprToStringFormAndAssignmentMap(textExpr: Expr, assignmentMap: Map[Identifier, String]=Map(), posToId: Map[Position, Identifier]=Map()): (StringForm, Map[Identifier, String], Map[Position, Identifier]) = {
       textExpr match {
         case StringLiteral(string) =>
-          if(textExpr.getPos.line == -1) throw new Exception("Line is -1 on " + textExpr)
-          val identifier = posToId.getOrElse(textExpr.getPos, Common.FreshIdentifier("l:"+textExpr.getPos.line+",c:"+textExpr.getPos.col).copiedFrom(textExpr))
-          (List(Right(identifier)), assignmentMap + (identifier -> string), posToId+(textExpr.getPos -> identifier))
+          textExpr.getPos.file.getName match { // Is there a better way to check if the constant comes from the library?
+            case "WebBuilder.scala" => (List(Left(string)), assignmentMap, posToId)
+            case _ =>
+              if(textExpr.getPos.line == -1) throw new Exception("Line is -1 on " + textExpr)
+              val identifier = posToId.getOrElse(textExpr.getPos, Common.FreshIdentifier("l:"+textExpr.getPos.line+",c:"+textExpr.getPos.col).copiedFrom(textExpr))
+              println("Creating identifier " +identifier + " -> file " + textExpr.getPos.file.getName + " \"" + string + "\"") 
+              (List(Right(identifier)), assignmentMap + (identifier -> string), posToId+(textExpr.getPos -> identifier))
+          }
         case StringConcat(tExpr1, tExpr2) =>
           textExprToStringFormAndAssignmentMap(tExpr1, assignmentMap, posToId) match {
           case (strForm1, assignMap1, posToID1) =>
