@@ -104,8 +104,9 @@ object ScalaJS_Main extends js.JSApp {
     private val idOfThis = "sourceCodeSubmitButton"
     val scalaJSButton = <.button(
       reservedAttributeForImplicitWebProgrammingID := idOfThis,
+      ^.className := "btn btn-primary",
       ^.onClick --> Callback{submitSourceCode()},
-      "Submit source code change"
+      "Run code"
     )
     private def getTheJSObject = {
       dom.document.querySelector("["+reservedAttributeForImplicitWebProgrammingID_name+" = "+idOfThis+"]")
@@ -190,12 +191,7 @@ object ScalaJS_Main extends js.JSApp {
       submitHtmlButton
     )
 
-    val submitCodeButton = <.button(
-      ^.id := "sourceCodeSubmitButton",
-      ^.className := "btn btn-primary",
-      ^.onClick --> submitButtonCallback,
-      "Run code"
-    )
+    val submitCodeButton = SourceCodeSubmitButton.scalaJSButton
 
     val aceEditorDiv = <.div(
       ^.id := "aceeditor"//,
@@ -310,7 +306,7 @@ object ScalaJS_Main extends js.JSApp {
               editor.getSession().on("change", aceEdOnChangeCallbackVal_master)
 //              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
               activateAceEdOnChangeCallback_standard()
-              submitButtonAction()
+              submitSourceCode()
             case Right(serverError) =>
               println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
           }

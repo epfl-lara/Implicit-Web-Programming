@@ -54,7 +54,7 @@
 	color: blue;
 }
 
-#sourceCodeSubmitButton {
+*[data-reservedattributeforimplicitwebprogrammingid=sourceCodeSubmitButton] {
 	margin: 5px;
 }
 
