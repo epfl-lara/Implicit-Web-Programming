@@ -31,6 +31,7 @@ object Settings {
     val booPickle = "1.1.0"
     val diode = "0.3.0"
     val uTest = "0.3.1"
+    val scalajsjQuery = "0.8.0"
 
     val react = "0.14.3"
     val jQuery = "1.11.1"
@@ -55,7 +56,8 @@ object Settings {
     "com.vmunier" %% "play-scalajs-scripts" % versions.playScripts,
     "org.webjars" % "font-awesome" % "4.3.0-1" % Provided,
     "org.webjars" % "bootstrap" % versions.bootstrap % Provided,
-    "com.lihaoyi" %% "autowire" % versions.autowire
+    "com.lihaoyi" %% "autowire" % versions.autowire,
+    "org.webjars" % "jquery" % "2.1.1"
   ))
 
   /** Dependencies only used by the JS project (note the use of %%% instead of %%) */
@@ -63,6 +65,7 @@ object Settings {
     "com.github.japgolly.scalajs-react" %%% "core" % versions.scalajsReact,
     "com.github.japgolly.scalajs-react" %%% "extra" % versions.scalajsReact,
     "com.github.japgolly.scalacss" %%% "ext-react" % versions.scalaCSS,
+    "be.doeraene" %%% "scalajs-jquery" % versions.scalajsjQuery,
     "me.chrons" %%% "diode" % versions.diode,
     "me.chrons" %%% "diode-react" % versions.diode,
     "org.scala-js" %%% "scalajs-dom" % versions.scalaDom,

@@ -12,6 +12,8 @@ import webDSL.webDescription._
 import scalatags.JsDom.all._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, ScalaJSDefined}
+import js.Dynamic.{literal => l}
+import org.scalajs.jquery.{ jQuery => $, JQueryAjaxSettings, JQueryXHR, JQuery, JQueryEventObject }
 import scala.util.{Failure, Success}
 import com.scalawarrior.scalajs.ace._
 import japgolly.scalajs.react.vdom.prefix_<^._
@@ -119,45 +121,19 @@ object ScalaJS_Main extends js.JSApp {
   def fillSourceCodeDiv() = {
     val destinationDivId = "SourceCodeDiv"
 
-    val title = <.h1("Source Code")
+    val title = <.h1("Behind the scenes")
 
-
-    val submitButton = SourceCodeSubmitButton.scalaJSButton
-
-    val aceEditorDiv = <.div(
-      ^.id := "aceeditor",
-      ^.fontSize := "12px",
-      ^.position := "absolute",
-      ^.width := "50%",
-      ^.top := 130,
-      ^.right := 0,
-      ^.bottom := 0,
-      ^.left := 0
-    )
-
-    val divContent = <.div(
-      title,
-      submitButton,
-      aceEditorDiv
-    )
-    ReactDOM.render(divContent, document.getElementById(destinationDivId))
-    AceEditor.initialiseAndIncludeEditorInWebPage()
-  }
-
-  def fillViewerDiv() = {
-    val destinationDivId = "ViewerDiv"
-
-    val title = <.h1("Viewer")
-    def submitButtonCallback = Callback{
+    def submitHtmlButtonCallback = Callback{
         println("submit html change")
     }
-    val submitButton = <.button(
-      ^.onClick --> submitButtonCallback,
+    val submitHtmlButton = <.button(
+      ^.className := "btn btn-secondary",
+      ^.onClick --> submitHtmlButtonCallback,
       "Submit html change"
     )
     def stringModificationForm() = {
       val idField = <.input(^.id := "idField_stringModificationForm", ^.`type` := "text", ^.name := "webEID", ^.placeholder := "1")
-      val attributeField = <.input(^.id := "attributeField_stringModificationForm", ^.`type` := "radio", ^.name := "attribute", ^.value := "Text", ^.placeholder := "Text")
+      val attributeField = <.input(^.id := "attributeField_stringModificationForm", ^.`type` := "checkbox", ^.name := "attribute", ^.value := "Text", ^.placeholder := "Text")
       val attributeFieldLabel = "Text"
       val newValueField = <.input(^.id := "newValueField_stringModificationForm", ^.`type` := "text", ^.name := "newValue", ^.placeholder := "newValue")
 
@@ -194,7 +170,11 @@ object ScalaJS_Main extends js.JSApp {
           if(!abort) submitStringModification(weID, webAttribute, newValue)
       }
 
-      val submitStringModificationButton = <.button("Submit String Modification", ^.onClick --> submitButtonCallback)
+      val submitStringModificationButton =
+        <.button(
+            "Submit String Modification",
+            ^.className := "btn btn-primary",
+            ^.onClick --> submitButtonCallback)
 
       <.div(
         idField,
@@ -204,6 +184,66 @@ object ScalaJS_Main extends js.JSApp {
         submitStringModificationButton
       )
     }
+    val menuHtml = <.div(
+      ^.id := "htmlMenu",
+      stringModificationForm(),
+      submitHtmlButton
+    )
+
+    val submitCodeButton = <.button(
+      ^.id := "sourceCodeSubmitButton",
+      ^.className := "btn btn-primary",
+      ^.onClick --> submitButtonCallback,
+      "Run code"
+    )
+
+    val aceEditorDiv = <.div(
+      ^.id := "aceeditor"//,
+      //^.fontSize := "12px",
+      //^.position := "absolute",
+      //^.width := "50%",
+      //^.top := 130,
+      //^.right := 0,
+      //^.bottom := 0,
+      //^.left := 0
+    )
+    
+    val minimizeButton = <.div("<< minimize",
+        ^.id := "minimizeButton"
+    )
+
+    val divContent = <.div(
+      minimizeButton,
+      title,
+      aceEditorDiv,
+      submitCodeButton,
+      menuHtml
+    )
+    ReactDOM.render(divContent, document.getElementById(destinationDivId))
+    $("#minimizeButton").on("click", () => {
+      minimizeSourceCodeView()
+    })
+    AceEditor.initialiseAndIncludeEditorInWebPage()
+  }
+  
+  def minimizeSourceCodeView(): Unit = {
+    $("#SourceCodeDiv").animate(l(left = "-600px"), complete = () => {
+      $("#ViewerDiv").removeClass("edited")
+      $("#minimizeButton").text("Behind the scenes >>")
+      val w = $("#minimizeButton").width()
+      $("#minimizeButton").css("right", "-" + (w + 20) + "px").off("click").on("click", () => {
+        $("#SourceCodeDiv").animate(l(left = "0px"), complete = () => {
+          $("#ViewerDiv").addClass("edited")
+          $("#minimizeButton").text("<< minimize").css("right", "10px").off("click").on("click", () => {
+            minimizeSourceCodeView()
+          })
+        })
+      })
+    })
+  }
+
+  def fillViewerDiv() = {
+    val destinationDivId = "ViewerDiv"
 //    val f = stringModificationForm.
 
 //    var i = 1
@@ -224,9 +264,6 @@ object ScalaJS_Main extends js.JSApp {
       ^.id := "htmlDisplayerDiv"
     )
     val divContent = <.div(
-      title,
-      stringModificationForm(),
-      submitButton,
 //      testButton,
       htmlDisplayerDiv
     )
@@ -273,6 +310,7 @@ object ScalaJS_Main extends js.JSApp {
               editor.getSession().on("change", aceEdOnChangeCallbackVal_master)
 //              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
               activateAceEdOnChangeCallback_standard()
+              submitButtonAction()
             case Right(serverError) =>
               println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
           }
@@ -360,7 +398,7 @@ object ScalaJS_Main extends js.JSApp {
     private def aceEdOnChangeCallback_doNothing(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit = {
 //      Do Nothing
 //      println("AceEditor onChange callback: do nothing")
-    }
+  }
   }
 
 //  def includeScriptInMainTemplate(scriptTagToInclude: scalatags.JsDom.TypedTag[org.scalajs.dom.html.Script]) = {

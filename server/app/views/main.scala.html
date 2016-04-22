@@ -7,23 +7,26 @@
         <title>Implicit Web Programming</title>
         <meta charset="UTF-8">
 
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("bootstrap/css/bootstrap.min.css")">
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("bootstrap/css/bootstrap-theme.min.css")">
         <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
         <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
         <script src="@routes.Assets.versioned("javascripts/hello.js")" type="text/javascript"></script>
         <!--<script type="text/javascript" src="./target/scala-2.11/client-fastopt.js"></script>-->
 
     </head>
-    <body>
+    <body role="document">
 
-        <div style="float:left; width:50%" id="SourceCodeDiv">
+        <div style="" id="SourceCodeDiv">
             <!--<h1>Source Code</h1>-->
             <!--<button type="button" id="submitSourceCodeButton", onclick="ScalaJS_Main().setSourceCodeRequestWillBeRemoved()">Submit</button>-->
             <!--@aceEditor()-->
         </div>
 
-        <div style="float:right; width:50%" id="ViewerDiv">
+        <div class="container theme-showcase edited" role="main" id="ViewerDiv">
 
         </div>
+
 
         <!--Used by the scalajs from project "client" to include javascript-->
         <!--<div id="scalajsScriptInclusionPoint"> </div>-->
