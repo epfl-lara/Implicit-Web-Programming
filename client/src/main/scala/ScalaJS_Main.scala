@@ -21,6 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import boopickle.Default._
 import boopickle.PicklerHelper
 import autowire._
+import scala.language.implicitConversions
 /** **/
 
 object ScalaJS_Main extends js.JSApp {
@@ -411,6 +412,8 @@ object ScalaJS_Main extends js.JSApp {
     //          case leon.lang.None() => ""
     //        }
     //        <.p(text)
+          case Input(/*webElID,*/tpe, placeHolder, text) =>
+            <.input(^.tpe := tpe, ^.placeholder := placeHolder, ^.value := text)
           case Header(/*webElID,*/ text, level) =>
             level match {
               case HLOne() => <.h1(text, impWebProgIDAttr := webElID, ^.title := "webElID= "+webElID)

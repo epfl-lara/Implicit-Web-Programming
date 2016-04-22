@@ -4,7 +4,7 @@ import leon.LeonContext
 import leon.purescala.Common
 import leon.purescala.Common._
 import leon.purescala.Definitions.CaseClassDef
-import leon.purescala.Expressions.{CaseClass, Expr, StringConcat, StringLiteral}
+import leon.purescala.Expressions.{CaseClass, Expr, StringConcat, StringLiteral, CaseClassSelector, TupleSelect, Tuple, AsInstanceOf}
 import leon.purescala.Types.CaseClassType
 import leon.solvers.string.StringSolver
 import leon.solvers.string.StringSolver._
@@ -23,9 +23,10 @@ import shared.{SourceCodeSubmissionResult, StringModification, StringModificatio
   */
 object StringModificationProcessor {
 
-   case class StringModificationProcessingException(msg:String) extends Exception
+  case class StringModificationProcessingException(msg:String) extends java.lang.Exception(msg, null)
    def failure(failureMessage: String) = {
-     throw StringModificationProcessingException(s"Failure in StringModificationProcessor: ${failureMessage}")
+    println(failureMessage)
+     throw new StringModificationProcessingException(s"Failure in StringModificationProcessor: ${failureMessage}")
    }
 
   private def getWebElemAndUnevalExprOfWebElemFromSourceMap(weID: Int, sourceMap: SourceMap, sReporter: ServerReporter) = {
@@ -60,7 +61,6 @@ object StringModificationProcessor {
 
   def process(strMod: StringModification, serverReporter: ServerReporter) : StringModificationSubmissionResult = {
     val sReporter = serverReporter.startProcess("String Modification Processor")
-
 
     val (weID, modWebAttr, newVal) = strMod match {case StringModification(w, m, n)=> (w,m,n)}
     sReporter.report(Info,
@@ -99,10 +99,28 @@ object StringModificationProcessor {
     val textExpr = unevalExprOfWebElem match {
       case CaseClass(CaseClassType(_, _), argSeq) => argSeq(argumentIndexOfModifiedStringWebAttrInWebElem)
     }
+    
+    /* Evaluates partially an expression until there is no more TupleSelect and CaseClassSelector.*/
+    def simplifyCaseSelect(expr: Expr): Expr = expr match {
+      case TupleSelect(Tuple(args), i) =>
+        args(i - 1)
+      case TupleSelect(arg, i) =>
+        simplifyCaseSelect(TupleSelect(simplifyCaseSelect(arg), i))
+      case CaseClassSelector(cct, CaseClass(ct, args), id) =>
+        args(cct.classDef.selectorID2Index(id))
+      case CaseClassSelector(cct, AsInstanceOf(expr, ct), id) =>
+        simplifyCaseSelect(CaseClassSelector(cct, expr, id))
+      case CaseClassSelector(cct, inExpr, id) =>
+        simplifyCaseSelect(CaseClassSelector(cct, simplifyCaseSelect(inExpr), id))
+      case CaseClassSelector(cct, ccs, id) => throw new Exception(s"Cannot partially evaluate $expr")
+    }
 
+    /* Takes an expression which can simplify to a single string.
+     * Returns an assignment of each of its constants to a fresh and unique ID */
     def textExprToStringFormAndAssignmentMap(textExpr: Expr, assignmentMap: Map[Identifier, String]=Map(), posToId: Map[Position, Identifier]=Map()): (StringForm, Map[Identifier, String], Map[Position, Identifier]) = {
       textExpr match {
         case StringLiteral(string) =>
+          if(textExpr.getPos.line == -1) throw new Exception("Line is -1 on " + textExpr)
           val identifier = posToId.getOrElse(textExpr.getPos, Common.FreshIdentifier("l:"+textExpr.getPos.line+",c:"+textExpr.getPos.col).copiedFrom(textExpr))
           (List(Right(identifier)), assignmentMap + (identifier -> string), posToId+(textExpr.getPos -> identifier))
         case StringConcat(tExpr1, tExpr2) =>
@@ -113,6 +131,9 @@ object StringModificationProcessor {
                 (strForm1 ++ strForm2, assignMap2, posToID2)
             }
         }
+        case e =>
+          // expr can be AsInstanceOf, CaseClassSelector, a TupleSelect or just a CaseClass
+          textExprToStringFormAndAssignmentMap(simplifyCaseSelect(e))
       }
     }
 
