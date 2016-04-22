@@ -11,7 +11,7 @@ object Main {
       val p = <.p(hello + " " + world)
       val h = <.h2("This is a test")
       val i = <.input(^.tpe := "button", ^.value := "Press me "+world+"!")
-      val w = WebPage(List(), List(h, p, i))
+      val w = WebPage(List(), List(<.div(h, p, i)))
       w
     }
 }

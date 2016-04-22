@@ -66,8 +66,8 @@ object ProgramEvaluator {
 //        Note: in resultEvaluationTreeExpr, the function calls are replaced by their return value
         sReporter.report(Info, "Evaluation successful")
         //TODO: should also export the evaluationTreeExpr
-        sReporter.report(Info, "Expr of the evaluated webPage: "+ resultEvaluatedExpr)
-        sReporter.report(Info, "Expr of the unevaluated webPage: "+ resultEvaluationTreeExpr)
+        //sReporter.report(Info, "Expr of the evaluated webPage: "+ resultEvaluatedExpr)
+        //sReporter.report(Info, "Expr of the unevaluated webPage: "+ resultEvaluationTreeExpr)
         Some((resultEvaluatedExpr, resultEvaluationTreeExpr))
       }
       case EvaluationResults.EvaluatorError(msg) => {
@@ -86,7 +86,7 @@ object ProgramEvaluator {
     val sReporter = serverReporter.startFunction("Converting the WebPage Expr into a WebPage, and building the sourceMap")
     case class ExceptionDuringConversion(msg:String) extends Exception
 
-    sReporter.report(Info, "webPage expr to be converted: "+ webPageEvaluatedExpr)
+    //sReporter.report(Info, "webPage expr to be converted: "+ webPageEvaluatedExpr)
 
     val result: Either[(WebPageWithIDedWebElements, SourceMap), String] = try {
       /** Looking up the case classes of webDSL_Leon**/
@@ -105,7 +105,7 @@ object ProgramEvaluator {
       val constructorMap = WebDescriptionClassesRegister.fullNameToConstructorMap.map({case (fullName, constructor) => (lookupCaseClass(program)(fullName), constructor)})
 
       def unExpr(sReporter: ServerReporter)(e: Expr): Any = {
-        sReporter.report(Info, "Unexpring " + e)
+        //sReporter.report(Info, "Unexpring " + e)
         e match {
           case CaseClass(CaseClassType(caseClassDef, targs), args) => {
             constructorMap.get(caseClassDef) match {
@@ -123,7 +123,9 @@ object ProgramEvaluator {
             }
           }
           case l: Literal[_] => l.value
-          case _ => {sReporter.report(Info, "Unexpr default case, something is probably wrong")}
+          case _ =>
+            unExpr(sReporter)(stringModification.StringModificationProcessor.simplifyCaseSelect(e))
+            //{sReporter.report(Info, "Unexpr default case, something is probably wrong")}
         }
       }
 
@@ -158,6 +160,7 @@ object ProgramEvaluator {
                 case List(elem, remainingList) => leon.collection.List(elem) ++ exprOfLeonListOfExprToLeonListOfExpr(remainingList)
               }
             case CaseClass(CaseClassType(`nilCaseClassDef`, targs), args) => leon.collection.List()
+            case e => exprOfLeonListOfExprToLeonListOfExpr(stringModification.StringModificationProcessor.simplifyCaseSelect(leonListExpr))
           }
         }
         val bootstrapExprOfUnevaluatedWebElementLeonList : leon.collection.List[Expr] = resultEvaluationTreeExpr match {
@@ -184,15 +187,17 @@ object ProgramEvaluator {
           * @return
           */
         def giveIDToWebElementsAndFillSourceMap(sourceMap: SourceMap, sReporter: ServerReporter)(webElement: WebElement, correspondingUnevaluatedExpr: Expr) : WebElementWithID = {
-          sReporter.report(Info, "Processing: webElement: "+webElement+" and corresponding unevaluated Expr: "+correspondingUnevaluatedExpr)
-          def sanityCheck(webElement: WebElement, correspondingUnevaluatedExpr: Expr, caseClassDef: CaseClassDef, webElementName: String, sReporter:ServerReporter) = {
+          //sReporter.report(Info, "Processing: webElement: "+webElement+" and corresponding unevaluated Expr: "+correspondingUnevaluatedExpr)
+          def sanityCheck(webElement: WebElement, correspondingUnevaluatedExpr: Expr, caseClassDef: CaseClassDef, webElementName: String, sReporter:ServerReporter): Expr = {
             correspondingUnevaluatedExpr match {
-              case CaseClass(CaseClassType(`caseClassDef`, targs), args) => ()
-              case _ => sReporter.report(Error,
+              case CaseClass(CaseClassType(`caseClassDef`, targs), args) => correspondingUnevaluatedExpr
+              case e =>
+                sanityCheck(webElement, stringModification.StringModificationProcessor.simplifyCaseSelect(correspondingUnevaluatedExpr), caseClassDef, webElementName, sReporter)
+              /*case _ => sReporter.report(Error,
                 s"""When IDing the webElements and building the sourceMap, function giveIDToWebElementsAndFillSourceMap was given a $webElementName and an expr that did not represent a $webElementName:
                     |   $webElementName: $webElement
                     |   Expr: $correspondingUnevaluatedExpr
-                  """.stripMargin)
+                  """.stripMargin)*/
             }
           }
           webElement match {
@@ -224,8 +229,8 @@ object ProgramEvaluator {
               sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
               WebElementWithID(webElement, id)
             case Div(sons: leon.collection.List[WebElement]) =>
-              sanityCheck(webElement, correspondingUnevaluatedExpr, divCaseClassDef, "Div", sReporter)
-              correspondingUnevaluatedExpr match {
+              val unvalExpr = sanityCheck(webElement, correspondingUnevaluatedExpr, divCaseClassDef, "Div", sReporter)
+              unvalExpr match {
                 case CaseClass(CaseClassType(`divCaseClassDef`, targs), args) => {
                   val id = generateID()
                   sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)

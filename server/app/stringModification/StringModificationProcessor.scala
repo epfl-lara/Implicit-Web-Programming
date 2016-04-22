@@ -22,6 +22,21 @@ import shared.{SourceCodeSubmissionResult, StringModification, StringModificatio
   * Created by dupriez on 4/18/16.
   */
 object StringModificationProcessor {
+  
+  /* Evaluates partially an expression until there is no more TupleSelect and CaseClassSelector.*/
+  def simplifyCaseSelect(expr: Expr): Expr = expr match {
+    case TupleSelect(Tuple(args), i) =>
+      args(i - 1)
+    case TupleSelect(arg, i) =>
+      simplifyCaseSelect(TupleSelect(simplifyCaseSelect(arg), i))
+    case CaseClassSelector(cct, CaseClass(ct, args), id) =>
+      args(cct.classDef.selectorID2Index(id))
+    case CaseClassSelector(cct, AsInstanceOf(expr, ct), id) =>
+      simplifyCaseSelect(CaseClassSelector(cct, expr, id))
+    case CaseClassSelector(cct, inExpr, id) =>
+      simplifyCaseSelect(CaseClassSelector(cct, simplifyCaseSelect(inExpr), id))
+    case CaseClassSelector(cct, ccs, id) => throw new Exception(s"Cannot partially evaluate $expr")
+  }
 
   case class StringModificationProcessingException(msg:String) extends java.lang.Exception(msg, null)
    def failure(failureMessage: String) = {
@@ -100,21 +115,6 @@ object StringModificationProcessor {
       case CaseClass(CaseClassType(_, _), argSeq) => argSeq(argumentIndexOfModifiedStringWebAttrInWebElem)
     }
     
-    /* Evaluates partially an expression until there is no more TupleSelect and CaseClassSelector.*/
-    def simplifyCaseSelect(expr: Expr): Expr = expr match {
-      case TupleSelect(Tuple(args), i) =>
-        args(i - 1)
-      case TupleSelect(arg, i) =>
-        simplifyCaseSelect(TupleSelect(simplifyCaseSelect(arg), i))
-      case CaseClassSelector(cct, CaseClass(ct, args), id) =>
-        args(cct.classDef.selectorID2Index(id))
-      case CaseClassSelector(cct, AsInstanceOf(expr, ct), id) =>
-        simplifyCaseSelect(CaseClassSelector(cct, expr, id))
-      case CaseClassSelector(cct, inExpr, id) =>
-        simplifyCaseSelect(CaseClassSelector(cct, simplifyCaseSelect(inExpr), id))
-      case CaseClassSelector(cct, ccs, id) => throw new Exception(s"Cannot partially evaluate $expr")
-    }
-
     /* Takes an expression which can simplify to a single string.
      * Returns an assignment of each of its constants to a fresh and unique ID */
     def textExprToStringFormAndAssignmentMap(textExpr: Expr, assignmentMap: Map[Identifier, String]=Map(), posToId: Map[Position, Identifier]=Map()): (StringForm, Map[Identifier, String], Map[Position, Identifier]) = {
