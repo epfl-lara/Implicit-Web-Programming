@@ -63,7 +63,6 @@ object ScalaJS_Main extends js.JSApp {
 //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
             SourceCodeSubmitButton.removeCustomBackground()
             renderWebPage(webPage, "htmlDisplayerDiv")
-            AceEditor.removeAceEdOnChangeCallback()
           }
           case SourceCodeSubmissionResult(None, log) => {
             println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
@@ -104,18 +103,23 @@ object ScalaJS_Main extends js.JSApp {
     private val idOfThis = "sourceCodeSubmitButton"
     val scalaJSButton = <.button(
       reservedAttributeForImplicitWebProgrammingID := idOfThis,
-      ^.className := "btn btn-primary",
+      ^.className := "btn btn-default",
       ^.onClick --> Callback{submitSourceCode()},
       "Run code"
     )
     private def getTheJSObject = {
-      dom.document.querySelector("["+reservedAttributeForImplicitWebProgrammingID_name+" = "+idOfThis+"]")
+//      dom.document.querySelector("["+reservedAttributeForImplicitWebProgrammingID_name+"="+idOfThis+"]")
+      $("["+reservedAttributeForImplicitWebProgrammingID_name+"="+idOfThis+"]")
     }
     def turnBackgroundRed() = {
-      getTheJSObject.setAttribute("style", "background-color:red")
+//      getTheJSObject.setAttribute("style", "background-color:red")
+      getTheJSObject.removeClass("btn-default")
+      getTheJSObject.addClass("btn-primary")
     }
     def removeCustomBackground() = {
-      getTheJSObject.setAttribute("style", "background-color:none")
+//      getTheJSObject.setAttribute("style", "background-color:none")
+      getTheJSObject.removeClass("btn-primary")
+      getTheJSObject.addClass("btn-default")
     }
   }
 
@@ -365,7 +369,7 @@ object ScalaJS_Main extends js.JSApp {
 
     private trait OnChangeCallback {val onChangeCallback : js.Function1[scala.scalajs.js.Any, Unit]}
 
-    private var currentOnChangeCallback/*: OnChangeCallback */= DoNothing_OnChangeCallback.onChangeCallback
+    private var currentOnChangeCallback/*: OnChangeCallback */= Standard_OnChangeCallback.onChangeCallback
     private val aceEdOnChangeCallbackVal_master/*: js.Function1[scala.scalajs.js.Any, Unit]*/ = aceEdOnChangeCallback_master _
     private def aceEdOnChangeCallback_master(uselessThingJustThereForTypingWithJavaScriptFunctions: scala.scalajs.js.Any) : Unit = {
       currentOnChangeCallback("useless")

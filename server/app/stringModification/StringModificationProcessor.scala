@@ -4,7 +4,7 @@ import leon.LeonContext
 import leon.purescala.Common
 import leon.purescala.Common._
 import leon.purescala.Definitions.CaseClassDef
-import leon.purescala.Expressions.{CaseClass, Expr, StringConcat, StringLiteral, CaseClassSelector, TupleSelect, Tuple, AsInstanceOf}
+import leon.purescala.Expressions.{AsInstanceOf, CaseClass, CaseClassSelector, Expr, StringConcat, StringLiteral, Tuple, TupleSelect}
 import leon.purescala.Types.CaseClassType
 import leon.solvers.string.StringSolver
 import leon.solvers.string.StringSolver._
@@ -14,7 +14,7 @@ import leon.webDSL.webDescription.{Header, Paragraph, Text, WebElement}
 import logging.OptionValWithLog
 import logging.serverReporter.{Debug, Info, ServerReporter}
 import memory.Memory
-import programEvaluator.SourceMap
+import programEvaluator.{SourceMap, TupleSelectAndCaseClassSelectRemover}
 import services.ApiService
 import shared.{SourceCodeSubmissionResult, StringModification, StringModificationSubmissionResult}
 
@@ -22,20 +22,38 @@ import shared.{SourceCodeSubmissionResult, StringModification, StringModificatio
   * Created by dupriez on 4/18/16.
   */
 object StringModificationProcessor {
-  
-  /* Evaluates partially an expression until there is no more TupleSelect and CaseClassSelector.*/
-  def simplifyCaseSelect(expr: Expr): Expr = expr match {
-    case TupleSelect(Tuple(args), i) =>
-      args(i - 1)
-    case TupleSelect(arg, i) =>
-      simplifyCaseSelect(TupleSelect(simplifyCaseSelect(arg), i))
-    case CaseClassSelector(cct, CaseClass(ct, args), id) =>
-      args(cct.classDef.selectorID2Index(id))
-    case CaseClassSelector(cct, AsInstanceOf(expr, ct), id) =>
-      simplifyCaseSelect(CaseClassSelector(cct, expr, id))
-    case CaseClassSelector(cct, inExpr, id) =>
-      simplifyCaseSelect(CaseClassSelector(cct, simplifyCaseSelect(inExpr), id))
-    case _ => throw new Exception(s"Cannot partially evaluate $expr")
+//
+//  /* Evaluates partially an expression until there is no more TupleSelect and CaseClassSelector.*/
+//  def simplifyCaseSelect(expr: Expr): Expr = expr match {
+//    case TupleSelect(Tuple(args), i) =>
+//      args(i - 1)
+//    case TupleSelect(arg, i) =>
+//      simplifyCaseSelect(TupleSelect(simplifyCaseSelect(arg), i))
+//    case CaseClassSelector(cct, CaseClass(ct, args), id) =>
+//      args(cct.classDef.selectorID2Index(id))
+//    case CaseClassSelector(cct, AsInstanceOf(expr, ct), id) =>
+//      simplifyCaseSelect(CaseClassSelector(cct, expr, id))
+//    case CaseClassSelector(cct, inExpr, id) =>
+//      simplifyCaseSelect(CaseClassSelector(cct, simplifyCaseSelect(inExpr), id))
+//    case _ => throw new Exception(s"Cannot partially evaluate $expr")
+//  }
+
+  object TupleSelectOrCaseClassSelect {
+    def unapply(expr: Expr): Option[Expr] = {
+      expr match {
+        case TupleSelect(Tuple(args), i) =>
+          Some(args(i - 1))
+        case TupleSelect(arg, i) =>
+          unapply(arg).flatMap(arg2 => unapply(TupleSelect(arg2, i)))
+        case CaseClassSelector(cct, CaseClass(ct, args), id) =>
+          Some(args(cct.classDef.selectorID2Index(id)))
+        case CaseClassSelector(cct, AsInstanceOf(expr, ct), id) =>
+          unapply(CaseClassSelector(cct, expr, id))
+        case CaseClassSelector(cct, inExpr, id) =>
+          unapply(inExpr).flatMap(inExpr2 => unapply(CaseClassSelector(cct, inExpr2, id)))
+        case _ => None/* throw new Exception(s"Cannot partially evaluate $expr")*/
+      }
+    }
   }
 
   case class StringModificationProcessingException(msg:String) extends java.lang.Exception(msg, null)
@@ -118,15 +136,16 @@ object StringModificationProcessor {
     /* Takes an expression which can simplify to a single string.
      * Returns an assignment of each of its constants to a fresh and unique ID */
     def textExprToStringFormAndAssignmentMap(textExpr: Expr, assignmentMap: Map[Identifier, String]=Map(), posToId: Map[Position, Identifier]=Map()): (StringForm, Map[Identifier, String], Map[Position, Identifier]) = {
-      textExpr match {
+      val actualTextExpr = TupleSelectAndCaseClassSelectRemover.removeTopLevelTupleSelectsAndCaseClassSelects(textExpr)
+      actualTextExpr match {
         case StringLiteral(string) =>
-          textExpr.getPos.file.getName match { // Is there a better way to check if the constant comes from the library?
+          actualTextExpr.getPos.file.getName match { // Is there a better way to check if the constant comes from the library?
             case "WebBuilder.scala" => (List(Left(string)), assignmentMap, posToId)
             case _ =>
-              if(textExpr.getPos.line == -1) throw new Exception("Line is -1 on " + textExpr)
-              val identifier = posToId.getOrElse(textExpr.getPos, Common.FreshIdentifier("l:"+textExpr.getPos.line+",c:"+textExpr.getPos.col).copiedFrom(textExpr))
-              println("Creating identifier " +identifier + " -> file " + textExpr.getPos.file.getName + " \"" + string + "\"") 
-              (List(Right(identifier)), assignmentMap + (identifier -> string), posToId+(textExpr.getPos -> identifier))
+              if(actualTextExpr.getPos.line == -1) throw new Exception("Line is -1 on " + actualTextExpr)
+              val identifier = posToId.getOrElse(actualTextExpr.getPos, Common.FreshIdentifier("l:"+actualTextExpr.getPos.line+",c:"+actualTextExpr.getPos.col).copiedFrom(textExpr))
+              println("Creating identifier " +identifier + " -> file " + actualTextExpr.getPos.file.getName + " \"" + string + "\"")
+              (List(Right(identifier)), assignmentMap + (identifier -> string), posToId+(actualTextExpr.getPos -> identifier))
           }
         case StringConcat(tExpr1, tExpr2) =>
           textExprToStringFormAndAssignmentMap(tExpr1, assignmentMap, posToId) match {
@@ -136,9 +155,6 @@ object StringModificationProcessor {
                 (strForm1 ++ strForm2, assignMap2, posToID2)
             }
         }
-        case e =>
-          // expr can be AsInstanceOf, CaseClassSelector, a TupleSelect or just a CaseClass
-          textExprToStringFormAndAssignmentMap(simplifyCaseSelect(e))
       }
     }
 

@@ -15,6 +15,7 @@ import memory.Memory
 import logging.serverReporter.Error
 import logging.serverReporter._
 import shared.SourceCodeSubmissionResult
+import stringModification.StringModificationProcessor.TupleSelectOrCaseClassSelect
 import webDSL.webDescription.Register
 
 import scala.reflect.runtime.universe
@@ -123,9 +124,11 @@ object ProgramEvaluator {
             }
           }
           case l: Literal[_] => l.value
+//            unapply magic
+          case TupleSelectOrCaseClassSelect(actualExpr) => unExpr(sReporter)(actualExpr)
           case _ =>
-            unExpr(sReporter)(stringModification.StringModificationProcessor.simplifyCaseSelect(e))
-            //{sReporter.report(Info, "Unexpr default case, something is probably wrong")}
+//            unExpr(sReporter)(stringModification.StringModificationProcessor.simplifyCaseSelect(e))
+            sReporter.report(Info, "Unexpr default case, something is probably wrong")
         }
       }
 
@@ -153,14 +156,15 @@ object ProgramEvaluator {
 //        println("div caseClassDef" + divCaseClassDef)
 //        println("cons caseClassDef" + consCaseClassDef)
 //        println("nil caseClassDef" + nilCaseClassDef)
+
         def exprOfLeonListOfExprToLeonListOfExpr(leonListExpr: Expr) : leon.collection.List[Expr] = {
-          leonListExpr match {
+          val actualLeonListExpr = TupleSelectAndCaseClassSelectRemover.removeTopLevelTupleSelectsAndCaseClassSelects(leonListExpr)
+          actualLeonListExpr match {
             case CaseClass(CaseClassType(`consCaseClassDef`, targs), args) =>
               args match {
                 case List(elem, remainingList) => leon.collection.List(elem) ++ exprOfLeonListOfExprToLeonListOfExpr(remainingList)
               }
             case CaseClass(CaseClassType(`nilCaseClassDef`, targs), args) => leon.collection.List()
-            case e => exprOfLeonListOfExprToLeonListOfExpr(stringModification.StringModificationProcessor.simplifyCaseSelect(leonListExpr))
           }
         }
         val bootstrapExprOfUnevaluatedWebElementLeonList : leon.collection.List[Expr] = resultEvaluationTreeExpr match {
@@ -188,18 +192,22 @@ object ProgramEvaluator {
           */
         def giveIDToWebElementsAndFillSourceMap(sourceMap: SourceMap, sReporter: ServerReporter)(webElement: WebElement, correspondingUnevaluatedExpr: Expr) : WebElementWithID = {
           //sReporter.report(Info, "Processing: webElement: "+webElement+" and corresponding unevaluated Expr: "+correspondingUnevaluatedExpr)
-          def sanityCheck(webElement: WebElement, correspondingUnevaluatedExpr: Expr, caseClassDef: CaseClassDef, webElementName: String, sReporter:ServerReporter): Expr = {
+          def sanityCheck(webElement: WebElement, correspondingUnevaluatedExpr: Expr, caseClassDef: CaseClassDef, webElementName: String, sReporter:ServerReporter): Unit = {
             correspondingUnevaluatedExpr match {
-              case CaseClass(CaseClassType(`caseClassDef`, targs), args) => correspondingUnevaluatedExpr
-              case e =>
-                sanityCheck(webElement, stringModification.StringModificationProcessor.simplifyCaseSelect(correspondingUnevaluatedExpr), caseClassDef, webElementName, sReporter)
-              /*case _ => sReporter.report(Error,
+              case CaseClass(CaseClassType(`caseClassDef`, targs), args) => ()/*correspondingUnevaluatedExpr*/
+//              case TupleSelectOrCaseClassSelect(actualExpr)=>
+//                sanityCheck(webElement, actualExpr, caseClassDef, webElementName, sReporter)
+              case _ =>
+                sReporter.report(Error,
                 s"""When IDing the webElements and building the sourceMap, function giveIDToWebElementsAndFillSourceMap was given a $webElementName and an expr that did not represent a $webElementName:
                     |   $webElementName: $webElement
                     |   Expr: $correspondingUnevaluatedExpr
-                  """.stripMargin)*/
+                  """.stripMargin)
+//                TODO: throw an exception instead of the following line
+//                correspondingUnevaluatedExpr
             }
           }
+          val actualCorrespondingUnevaluatedExpr = TupleSelectAndCaseClassSelectRemover.removeTopLevelTupleSelectsAndCaseClassSelects(correspondingUnevaluatedExpr)
           webElement match {
             // Wildcard patterns are not used for most of the following cases, so that the compiler complains whenever
             // the types of the arguments of these case classes are changed (in their definition).
@@ -210,30 +218,30 @@ object ProgramEvaluator {
               sReporter.report(Error,
                 s"""Something went wrong, function giveIDToWebElementsAndFillSourceMap was given a WebElementWithID:
                     |   WebElementWithID: $webElement
-                    |   Expr: $correspondingUnevaluatedExpr
+                    |   Expr: $actualCorrespondingUnevaluatedExpr
                   """.stripMargin)
               WebElementWithID(webElement, 0)
             case Paragraph(text: String) =>
-              sanityCheck(webElement, correspondingUnevaluatedExpr, paragraphCaseClassDef, "Paragraph", sReporter)
+              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, paragraphCaseClassDef, "Paragraph", sReporter)
               val id = generateID()
-              sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
+              sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
               WebElementWithID(webElement, id)
             case Header(text: String, level: HeaderLevel) =>
-              sanityCheck(webElement, correspondingUnevaluatedExpr, headerCaseClassDef, "Header", sReporter)
+              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, headerCaseClassDef, "Header", sReporter)
               val id = generateID()
-              sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
+              sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
               WebElementWithID(webElement, id)
             case Input(tpe, placeHolder, text) =>
-              sanityCheck(webElement, correspondingUnevaluatedExpr, inputCaseClassDef, "Input", sReporter)
+              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, inputCaseClassDef, "Input", sReporter)
               val id = generateID()
-              sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
+              sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
               WebElementWithID(webElement, id)
             case Div(sons: leon.collection.List[WebElement]) =>
-              val unvalExpr = sanityCheck(webElement, correspondingUnevaluatedExpr, divCaseClassDef, "Div", sReporter)
-              unvalExpr match {
+              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, divCaseClassDef, "Div", sReporter)
+              actualCorrespondingUnevaluatedExpr match {
                 case CaseClass(CaseClassType(`divCaseClassDef`, targs), args) => {
                   val id = generateID()
-                  sourceMap.addMapping(id, webElement, correspondingUnevaluatedExpr)
+                  sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
                   val sonsWebElemCorrespUnevalExprCouplLeonList = sons.zip(exprOfLeonListOfExprToLeonListOfExpr(args(0)))
                   val iDedSons : leon.collection.List[WebElement]= sonsWebElemCorrespUnevalExprCouplLeonList.map(
                     {case (webElem, correspUnevalExpr) => giveIDToWebElementsAndFillSourceMap(sourceMap, sReporter)(webElem, correspUnevalExpr)}
