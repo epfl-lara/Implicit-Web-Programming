@@ -142,7 +142,8 @@ object ProgramEvaluator {
 
       def unExpr(sReporter: ServerReporter)(e: Expr): Any = {
         //sReporter.report(Info, "Unexpring " + e)
-        e match {
+        val actualExpr = TupleSelectAndCaseClassSelectRemover.removeTopLevelTupleSelectsAndCaseClassSelects(e)
+        actualExpr match {
           case CaseClass(CaseClassType(caseClassDef, targs), args) => {
             constructorMap.get(caseClassDef) match {
               case Some((constructor, isWebElement)) =>
@@ -160,7 +161,7 @@ object ProgramEvaluator {
           }
           case l: Literal[_] => l.value
 //            unapply magic
-          case TupleSelectOrCaseClassSelect(actualExpr) => unExpr(sReporter)(actualExpr)
+//          case TupleSelectOrCaseClassSelect(actualExpr) => unExpr(sReporter)(actualExpr)
           case _ =>
 //            unExpr(sReporter)(stringModification.StringModificationProcessor.simplifyCaseSelect(e))
             sReporter.report(Info, "Unexpr default case, something is probably wrong")
