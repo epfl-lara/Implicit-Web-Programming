@@ -43,17 +43,14 @@ class SourceMap(val sourceCode: String, val program: Program){
     }
   }
 
-  def paragraph_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.webDSL.webDescription.Paragraph", serverReporter)
+  def element_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
+    lookupCaseClass(program, "leon.webDSL.webDescription.Element", serverReporter)
   }
-  def header_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.webDSL.webDescription.Header", serverReporter)
+  def textElement_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
+    lookupCaseClass(program, "leon.webDSL.webDescription.TextElement", serverReporter)
   }
-  def input_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.webDSL.webDescription.Input", serverReporter)
-  }
-  def div_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.webDSL.webDescription.Div", serverReporter)
+  def webAttribute_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
+    lookupCaseClass(program, "leon.webDSL.webDescription.WebAttribute", serverReporter)
   }
   def webPage_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
     lookupCaseClass(program, "leon.webDSL.webDescription.WebPage", serverReporter)

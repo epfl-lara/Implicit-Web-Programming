@@ -1,6 +1,5 @@
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing.Timer
-
 import japgolly.scalajs.react.{Callback, CallbackTo, ReactDOM, ReactElement}
 import org.scalajs.dom
 import dom.{Element, document}
@@ -8,7 +7,6 @@ import shared._
 import leon.webDSL.webDescription._
 import leon.lang.Map._
 import webDSL.webDescription._
-
 import scalatags.JsDom.all._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, ScalaJSDefined}
@@ -24,6 +22,7 @@ import boopickle.Default._
 import boopickle.PicklerHelper
 import autowire._
 import scala.language.implicitConversions
+import japgolly.scalajs.react.ReactNode
 /** **/
 
 object ScalaJS_Main extends js.JSApp {
@@ -56,8 +55,6 @@ object ScalaJS_Main extends js.JSApp {
             println(
               s"""
                  |Received "Some(WebPage)"
-                 |  Number of webPageAttributes: ${webPage.webPageAttributes.size}
-                 |  Number of webElements: ${webPage.sons.size}
                   """.stripMargin)
 //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
 //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
@@ -72,7 +69,7 @@ object ScalaJS_Main extends js.JSApp {
     }
   }
 
-  def submitStringModification(webElementID: Int, modifiedAttribute: StringWebAttribute, newValue: String) = {
+  def submitStringModification(webElementID: Int, modifiedAttribute: Option[String], newValue: String) = {
     println("Send Modification")
     AjaxClient[Api].submitStringModification(StringModification(webElementID, modifiedAttribute, newValue)).call().onComplete {
       case Failure(exception) => {println("error during submission of modification: " + exception)}
@@ -142,14 +139,14 @@ object ScalaJS_Main extends js.JSApp {
       val attributeFieldLabel = "Text"
       val newValueField = <.input(^.id := "newValueField_stringModificationForm", ^.`type` := "text", ^.name := "newValue", ^.placeholder := "newValue")
 
-      def webAttributeNameToStringWebAttribute(waName: String) : Option[StringWebAttribute]= {
+      /*def webAttributeNameToStringWebAttribute(waName: String) : Option[WebAttribute]= {
         waName match {
           case "Text" => Some(Text)
           case _ =>
             println("attribute name (\""+waName+"\")not recognised as a StringWebAttribute in function webAttributeNameToWebAttribute")
             None
         }
-      }
+      }*/
       @ScalaJSDefined
       trait AugmentedElement extends Element {
         val value: js.UndefOr[String]
@@ -162,17 +159,18 @@ object ScalaJS_Main extends js.JSApp {
           var abort = false
           val weID : Int = ("0" + dom.document.getElementById("idField_stringModificationForm").value.getOrElse("")).toInt
 //          println("weID=" + weID)
-          val webAttributeName = dom.document.getElementById("attributeField_stringModificationForm").getAttribute("value")
+          
+          /*val webAttributeName = dom.document.getElementById("attributeField_stringModificationForm").getAttribute("value")
           val webAttribute = webAttributeNameToStringWebAttribute(webAttributeName) match {
             case Some(webA) => webA
             case None =>
               println("Error before sending a string modification to the server: modified WebAttribute could not be obtained from the name:\""+webAttributeName+"\"")
               abort = true
               Text
-          }
+          }*/
           val newValue : String = dom.document.getElementById("newValueField_stringModificationForm").value.getOrElse("")
 //        println("newValue= "+ newValue)
-          if(!abort) submitStringModification(weID, webAttribute, newValue)
+          if(!abort) submitStringModification(weID, None/*webAttribute*/, newValue) // None means that we don't change properties, but only text nodes.
       }
 
       val submitStringModificationButton =
@@ -270,11 +268,11 @@ object ScalaJS_Main extends js.JSApp {
     ReactDOM.render(divContent, document.getElementById(destinationDivId))
   }
 
-  object stringModificationFromContentEditableHandler {
-    def reportModification(weID: Int, modWebAttr: StringWebAttribute= Text) = {
+  /*object stringModificationFromContentEditableHandler {
+    def reportModification(weID: Int, modWebAttr: Option[WebAttribute] = Text) = {
 
     }
-  }
+  }*/
 
 //  def fetchAndUseSourceCode(whatToDoWithSourceCode: String => Unit) = {
 ////    var sourceCode = ""
@@ -407,7 +405,7 @@ object ScalaJS_Main extends js.JSApp {
   def renderWebPage(webPageWithIDedWebElements: WebPageWithIDedWebElements, destinationDivID: String) = {
     val webPageDiv = <.div(
       ^.id := "webPage",
-      leonListToList(webPageWithIDedWebElements.sons).map(convertWebElementWithIDToReactElement)
+      convertWebElementWithIDToReactElement(webPageWithIDedWebElements.main)
     )
     ReactDOM.render(webPageDiv, document.getElementById(destinationDivID))
   }
@@ -426,7 +424,7 @@ object ScalaJS_Main extends js.JSApp {
     * @param webElWithID
     * @return
     */
-  def convertWebElementWithIDToReactElement(webElWithID: WebElement /*, idGenerator: IDGenerator*/) : ReactElement = {
+  def convertWebElementWithIDToReactElement(webElWithID: WebElement /*, idGenerator: IDGenerator*/) : ReactNode = {
 //    val webElID = /*idGenerator.generateID()*/ 0
     webElWithID match {
       case WebElementWithID(webElem, webElID) =>
@@ -450,35 +448,24 @@ object ScalaJS_Main extends js.JSApp {
     //          case leon.lang.None() => ""
     //        }
     //        <.p(text)
-          case Input(/*webElID,*/tpe, placeHolder, text) =>
-            <.input(^.tpe := tpe, ^.placeholder := placeHolder, ^.value := text)
-          case Header(/*webElID,*/ text, level) =>
-            level match {
-              case HLOne() => <.h1(text, impWebProgIDAttr := webElID, ^.title := "webElID= "+webElID)
-              case HLTwo() => <.h2(text, impWebProgIDAttr := webElID, ^.title := "webElID= "+webElID)
-              case HLThree() => <.h3(text, impWebProgIDAttr := webElID, ^.title := "webElID= "+webElID)
-              case HLFour() => <.h4(text, impWebProgIDAttr := webElID, ^.title := "webElID= "+webElID)
-              case HLFive() => <.h5(text, impWebProgIDAttr := webElID, ^.title := "webElID= "+webElID)
-              case HLSix() => <.h6(text, impWebProgIDAttr := webElID, ^.title := "webElID= "+webElID)
-            }
-          case Paragraph(/*webElID,*/ text) =>
+          case TextElement(text) =>
             //TODO: change "heyhey" to the value of the text of the paragraph
             val textChangeCallBack = Callback{ println("paragraph changed")/*; submitStringModification(webElID, Text, "heyhey")*/}
-            val p = <.p(
-              text,
-              impWebProgIDAttr := webElID,
+            //p
+            <.span(text: ReactNode,
+                impWebProgIDAttr := webElID,
 //              ^.contentEditable := "true",
               ^.onChange --> textChangeCallBack,
               ^.onInput --> textChangeCallBack,
               ^.title := "webElID= "+webElID
             )
-            p
-          case Div(/*webElID,*/ sons) =>
+          case Element(tag, sons, attributes) =>
 //            print("I'm a div being processed by convertWebElementWithIDToReactElement. I'm about to apply convertWebElementWithIDToReactElement on each element of the list: " + sons)
-            <.div(
+            tag.reactTag(
               impWebProgIDAttr := webElID,
               leonListToList(sons).map(convertWebElementWithIDToReactElement),
-              ^.title := "webElID= "+webElID
+              ^.title := "webElID= "+webElID,
+              leonListToList(attributes).map{ x => x.attributeName.reactAttr := x.attributeValue }
             )
           case WebElementWithID(_,_) =>
     //        Should never happen

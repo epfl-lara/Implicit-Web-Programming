@@ -5,4 +5,4 @@ import leon.webDSL.webDescription._
 /**
   * Created by dupriez on 3/10/16.
   */
-case class StringModification(webElementID: Int, modifiedWebAttribute: StringWebAttribute, newValue: String)
+case class StringModification(webElementID: Int, modifiedWebAttribute: Option[String], newValue: String)

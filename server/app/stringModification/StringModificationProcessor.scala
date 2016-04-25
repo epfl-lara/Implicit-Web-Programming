@@ -10,13 +10,14 @@ import leon.solvers.string.StringSolver
 import leon.solvers.string.StringSolver._
 import leon.synthesis.FileInterface
 import leon.utils.Position
-import leon.webDSL.webDescription.{Header, Paragraph, Text, WebElement}
+import leon.webDSL.webDescription.{TextElement, Element, WebElement, WebAttribute}
 import logging.OptionValWithLog
 import logging.serverReporter.{Debug, Info, ServerReporter}
 import memory.Memory
 import programEvaluator.{SourceMap, TupleSelectAndCaseClassSelectRemover}
 import services.ApiService
 import shared.{SourceCodeSubmissionResult, StringModification, StringModificationSubmissionResult}
+import programEvaluator.ProgramEvaluator
 
 /**
   * Created by dupriez on 4/18/16.
@@ -85,13 +86,6 @@ object StringModificationProcessor {
     (webElem, unevalExprOfWebElem)
   }
 
-  private def getCaseClassDefValOrFail(optionValWithLog: OptionValWithLog[CaseClassDef]) : CaseClassDef = {
-    optionValWithLog match{
-      case OptionValWithLog(Some(value), log) => value
-      case OptionValWithLog(None, log) => failure(log)
-    }
-  }
-
   def process(strMod: StringModification, serverReporter: ServerReporter) : StringModificationSubmissionResult = {
     val sReporter = serverReporter.startProcess("String Modification Processor")
 
@@ -114,23 +108,29 @@ object StringModificationProcessor {
     val sourceMap = Memory.sourceMap
     val (webElement, unevalExprOfWebElem) = getWebElemAndUnevalExprOfWebElemFromSourceMap(weID, sourceMap, sReporter)
     val sourceCode = sourceMap.sourceCode
+    
+    val cb = new ProgramEvaluator.ConversionBuilder(sourceMap, serverReporter)
+    import cb._
 
-    val webPageCaseClassDef = getCaseClassDefValOrFail(sourceMap.webPage_webElementCaseClassDef(sReporter))
-    val paragraphCaseClassDef = getCaseClassDefValOrFail(sourceMap.paragraph_webElementCaseClassDef(sReporter))
-    val headerCaseClassDef = getCaseClassDefValOrFail(sourceMap.header_webElementCaseClassDef(sReporter))
-    val divCaseClassDef = getCaseClassDefValOrFail(sourceMap.div_webElementCaseClassDef(sReporter))
-    val consCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonCons_caseClassDef(sReporter))
-    val nilCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonNil_caseClassDef(sReporter))
-
-    val (argumentIndexOfModifiedStringWebAttrInWebElem, originalText) = modWebAttr match {
-      case Text => webElement match {
-        case Paragraph(text) => (0,text)
-        case Header(text,_) => (0,text)
-        case _ => failure(s"WebElement $webElement has no Text webAttr to modify according to the pattern matching in StringModificationProcessor")
-      }
-    }
-    val textExpr = unevalExprOfWebElem match {
-      case CaseClass(CaseClassType(_, _), argSeq) => argSeq(argumentIndexOfModifiedStringWebAttrInWebElem)
+    val (textExpr, originalText) = (webElement, modWebAttr) match {
+      case (TextElement(txt), None) =>
+         val textExpr = unevalExprOfWebElem match {
+           case CaseClass(CaseClassType(_, _), argSeq) => argSeq(0)
+        }
+        (textExpr, txt)
+      case (e: Element, Some(prop)) =>
+         val textExpr = (unevalExprOfWebElem match {
+           case CaseClass(CaseClassType(_, _), List(tag, children, attributes)) =>
+             (exprOfLeonListOfExprToLeonListOfExpr(attributes) find(x => x match {
+               case CaseClass(CaseClassType(_, _), List(attrName, attrValue)) =>
+                 attrName == prop
+               case _ => false
+             })) map {
+               case CaseClass(CaseClassType(_, _), List(attrName, attrValue)) => attrValue
+             }
+        }) getOrElse (StringLiteral(""))
+        (textExpr, e.attr(prop).getOrElse(""))
+      case (we, prop) => failure(s"WebElement $webElement was requested attribute $prop to modify according to the pattern matching in StringModificationProcessor")
     }
     
     /* Takes an expression which can simplify to a single string.

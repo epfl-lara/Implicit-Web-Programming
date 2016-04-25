@@ -56,19 +56,9 @@ object Picklers extends PicklerHelper {
 //  }
 
   implicit val webElementPickler = compositePickler[WebElement]
-  webElementPickler.addConcreteType[Div]
-  webElementPickler.addConcreteType[Header]
-  webElementPickler.addConcreteType[Paragraph]
-  webElementPickler.addConcreteType[Input]
+  webElementPickler.addConcreteType[Element]
+  webElementPickler.addConcreteType[TextElement]
   webElementPickler.addConcreteType[WebElementWithID]
-
-  implicit val headerLevelPickler = compositePickler[HeaderLevel]
-  headerLevelPickler.addConcreteType[HLOne]
-  headerLevelPickler.addConcreteType[HLTwo]
-  headerLevelPickler.addConcreteType[HLThree]
-  headerLevelPickler.addConcreteType[HLFour]
-  headerLevelPickler.addConcreteType[HLFive]
-  headerLevelPickler.addConcreteType[HLSix]
 
   implicit val serverErrorPickler = compositePickler[ServerError]
   serverErrorPickler.addConcreteType[UnableToFetchBootstrapSourceCode]

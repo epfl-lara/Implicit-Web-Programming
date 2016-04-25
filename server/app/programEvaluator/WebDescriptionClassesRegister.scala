@@ -14,16 +14,9 @@ object WebDescriptionClassesRegister {
   //The boolean indicates whether it extends WebElement
   val fullNameToConstructorMap : Map[String, (universe.MethodMirror, Boolean)] = Map(
     ("leon.webDSL.webDescription.WebPage", (getReflectConstructor[WebPage], false)),
-    ("leon.webDSL.webDescription.Div", (getReflectConstructor[Div], true)),
-    ("leon.webDSL.webDescription.Header", (getReflectConstructor[Header], true)),
-    ("leon.webDSL.webDescription.Paragraph", (getReflectConstructor[Paragraph], true)),
-    ("leon.webDSL.webDescription.HLOne", (getReflectConstructor[HLOne], false)),
-    ("leon.webDSL.webDescription.HLTwo", (getReflectConstructor[HLTwo], false)),
-    ("leon.webDSL.webDescription.HLThree", (getReflectConstructor[HLThree], false)),
-    ("leon.webDSL.webDescription.HLFour", (getReflectConstructor[HLFour], false)),
-    ("leon.webDSL.webDescription.HLFive", (getReflectConstructor[HLFive], false)),
-    ("leon.webDSL.webDescription.HLSix", (getReflectConstructor[HLSix], false)),
-    ("leon.webDSL.webDescription.Input", (getReflectConstructor[Input], true)),
+    ("leon.webDSL.webDescription.Element", (getReflectConstructor[Element], true)),
+    ("leon.webDSL.webDescription.TextElement", (getReflectConstructor[TextElement], true)),
+    ("leon.webDSL.webDescription.WebAttribute", (getReflectConstructor[WebAttribute], false)),
     ("leon.collection.Cons", (getReflectConstructor[leon.collection.Cons[_]], false)),
     ("leon.collection.Nil", (getReflectConstructor[leon.collection.Nil[_]], false))//,
 //    ("leon.lang.Map", getReflectConstructor[leon.lang.Map[_,_]])

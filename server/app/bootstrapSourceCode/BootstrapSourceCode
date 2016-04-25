@@ -16,7 +16,7 @@ object Main {
       val i = <.input(
         ^.tpe := "button",
         ^.value := "Got it, "+title+" is awesome!")
-      val w = WebPage(List(), List(h, p, i))
+      val w = WebPage(<.div(h, p, i))
       w
     }
 }
