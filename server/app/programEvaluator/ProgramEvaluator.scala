@@ -41,6 +41,7 @@ object ProgramEvaluator {
     val textElementCaseClassDef = getCaseClassDefValOrFail(sourceMap.textElement_webElementCaseClassDef(sReporter))
     val elementCaseClassDef = getCaseClassDefValOrFail(sourceMap.element_webElementCaseClassDef(sReporter))
     val webPropertyCaseClassDef = getCaseClassDefValOrFail(sourceMap.webAttribute_webElementCaseClassDef(sReporter))
+    val webStyleCaseClassDef = getCaseClassDefValOrFail(sourceMap.webStyle_webElementCaseClassDef(sReporter))
     val consCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonCons_caseClassDef(sReporter))
     val nilCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonNil_caseClassDef(sReporter))
 //        println("paragraph caseClassDef: " + paragraphCaseClassDef)
@@ -56,6 +57,7 @@ object ProgramEvaluator {
             case List(elem, remainingList) => leon.collection.List(elem) ++ exprOfLeonListOfExprToLeonListOfExpr(remainingList)
           }
         case CaseClass(CaseClassType(`nilCaseClassDef`, targs), args) => leon.collection.List()
+        case _ => throw new Exception("Did not match leon list expr")
       }
     }
   }
@@ -177,7 +179,7 @@ object ProgramEvaluator {
         val bootstrapExprOfUnevaluatedWebElement : Expr = resultEvaluationTreeExpr match {
           case CaseClass(CaseClassType(`webPageCaseClassDef`, targs_1), Seq(arg)) =>
             arg
-            }
+        }
         def leonListToList[T](leonList: leon.collection.List[T]): List[T] = {
           val listBuffer = leonList.foldLeft(scala.collection.mutable.ListBuffer[T]())((list, elem)=>list += elem)
           listBuffer.toList
@@ -218,6 +220,7 @@ object ProgramEvaluator {
             // Because the following code may go haywire if these types are changed (especially if WebElements are added
             // to the definitions of these case classes)
             case WebElementWithID(_,_) =>
+              sReporter.report(Info, "#4")
 //              Should never happen
               sReporter.report(Error,
                 s"""Something went wrong, function giveIDToWebElementsAndFillSourceMap was given a WebElementWithID:
@@ -230,18 +233,18 @@ object ProgramEvaluator {
               val id = generateID()
               sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
               WebElementWithID(webElement, id)
-            case Element(tag: String, sons: leon.collection.List[WebElement], properties: leon.collection.List[WebAttribute]) =>
+            case Element(tag: String, sons, properties, styles) =>
               sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, elementCaseClassDef, "Element", sReporter)
               actualCorrespondingUnevaluatedExpr match {
-                case CaseClass(CaseClassType(`elementCaseClassDef`, targs), List(argTag, argSons, argProperties)) => {
+                case CaseClass(CaseClassType(`elementCaseClassDef`, targs), List(argTag, argSons, argProperties, argStyles)) =>
                   val id = generateID()
                   sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
                   val sonsWebElemCorrespUnevalExprCouplLeonList = sons.zip(exprOfLeonListOfExprToLeonListOfExpr(argSons))
                   val iDedSons : leon.collection.List[WebElement]= sonsWebElemCorrespUnevalExprCouplLeonList.map(
                     {case (webElem, correspUnevalExpr) => giveIDToWebElementsAndFillSourceMap(sourceMap, sReporter)(webElem, correspUnevalExpr)}
                   )
-                  WebElementWithID(Element(tag, iDedSons, properties), id)
-                }
+                  WebElementWithID(Element(tag, iDedSons, properties, styles), id)
+                case e => throw new Exception("Did not pattern match Element")
               }
           }
         }

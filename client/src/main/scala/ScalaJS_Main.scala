@@ -459,13 +459,14 @@ object ScalaJS_Main extends js.JSApp {
               ^.onInput --> textChangeCallBack,
               ^.title := "webElID= "+webElID
             )
-          case Element(tag, sons, attributes) =>
+          case Element(tag, sons, attributes, styles) =>
 //            print("I'm a div being processed by convertWebElementWithIDToReactElement. I'm about to apply convertWebElementWithIDToReactElement on each element of the list: " + sons)
             tag.reactTag(
               impWebProgIDAttr := webElID,
               leonListToList(sons).map(convertWebElementWithIDToReactElement),
               ^.title := "webElID= "+webElID,
-              leonListToList(attributes).map{ x => x.attributeName.reactAttr := x.attributeValue }
+              leonListToList(attributes).map{ x => x.attributeName.reactAttr := x.attributeValue },
+              leonListToList(styles).map{ x => x.attributeName.reactStyle := x.attributeValue }
             )
           case WebElementWithID(_,_) =>
     //        Should never happen

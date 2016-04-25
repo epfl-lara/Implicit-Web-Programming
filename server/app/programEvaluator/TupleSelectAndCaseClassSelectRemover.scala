@@ -18,7 +18,10 @@ object TupleSelectAndCaseClassSelectRemover {
         case CaseClassSelector(cct, CaseClass(ct, args), id) =>
           recurse(args(cct.classDef.selectorID2Index(id)))
         case CaseClassSelector(cct, inExpr, id) =>
-          recurse(CaseClassSelector(cct, recurse(inExpr), id))
+          val i = recurse(inExpr)
+          if(i eq inExpr) {
+            expr1
+          } else recurse(CaseClassSelector(cct, i, id))
         case AsInstanceOf(expr2, classType) =>
           recurse(expr2)
         case _ => expr1

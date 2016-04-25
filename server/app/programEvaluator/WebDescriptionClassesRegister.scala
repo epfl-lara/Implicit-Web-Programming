@@ -17,6 +17,7 @@ object WebDescriptionClassesRegister {
     ("leon.webDSL.webDescription.Element", (getReflectConstructor[Element], true)),
     ("leon.webDSL.webDescription.TextElement", (getReflectConstructor[TextElement], true)),
     ("leon.webDSL.webDescription.WebAttribute", (getReflectConstructor[WebAttribute], false)),
+    ("leon.webDSL.webDescription.WebStyle", (getReflectConstructor[WebStyle], false)),
     ("leon.collection.Cons", (getReflectConstructor[leon.collection.Cons[_]], false)),
     ("leon.collection.Nil", (getReflectConstructor[leon.collection.Nil[_]], false))//,
 //    ("leon.lang.Map", getReflectConstructor[leon.lang.Map[_,_]])
