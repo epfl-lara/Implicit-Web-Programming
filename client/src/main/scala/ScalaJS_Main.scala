@@ -1,14 +1,11 @@
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing.Timer
-
 import japgolly.scalajs.react.{Callback, CallbackTo, ReactDOM, ReactElement}
 import org.scalajs.dom
 import dom.{Element, document}
 import shared._
 import leon.webDSL.webDescription._
 import leon.lang.Map._
-import webDSL.webDescription._
-
 import scalatags.JsDom.all._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, ScalaJSDefined}
@@ -25,6 +22,7 @@ import boopickle.Default._
 import boopickle.PicklerHelper
 import autowire._
 import scala.language.implicitConversions
+import japgolly.scalajs.react.ReactNode
 /** **/
 
 object ScalaJS_Main extends js.JSApp {
@@ -57,8 +55,6 @@ object ScalaJS_Main extends js.JSApp {
             println(
               s"""
                  |Received "Some(WebPage)"
-                 |  Number of webPageAttributes: ${webPage.webPageAttributes.size}
-                 |  Number of webElements: ${webPage.sons.size}
                   """.stripMargin)
 //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
 //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
@@ -177,14 +173,14 @@ object ScalaJS_Main extends js.JSApp {
         reservedAttributeForImplicitWebProgrammingID := "newValueField_stringModificationForm",
         ^.`type` := "text", ^.name := "newValue", ^.placeholder := "newValue")
 
-      def webAttributeNameToStringWebAttribute(waName: String) : Option[StringWebAttribute]= {
+      /*def webAttributeNameToStringWebAttribute(waName: String) : Option[WebAttribute]= {
         waName match {
           case "Text" => Some(Text)
           case _ =>
             println("attribute name (\""+waName+"\")not recognised as a StringWebAttribute in function webAttributeNameToWebAttribute")
             None
         }
-      }
+      }*/
       def submitButtonCallback = Callback{
           println("Submit string modification button clicked")
           var abort = false
@@ -192,18 +188,15 @@ object ScalaJS_Main extends js.JSApp {
           val weID : Int = ("0" + getElementByImplicitWebProgrammingID("idField_stringModificationForm").value.getOrElse("")).toInt
 //          println("weID=" + weID)
 //          val webAttributeName = dom.document.getElementById("attributeField_stringModificationForm").getAttribute("value")
-          val webAttributeName = getElementByImplicitWebProgrammingID("attributeField_stringModificationForm").attr("value")
-          val webAttribute = webAttributeNameToStringWebAttribute(webAttributeName) match {
-            case Some(webA) => webA
-            case None =>
-              println("Error before sending a string modification to the server: modified WebAttribute could not be obtained from the name:\""+webAttributeName+"\"")
-              abort = true
-              Text
-          }
+          val webAttributeName: String = getElementByImplicitWebProgrammingID("attributeField_stringModificationForm").attr("value")
+          val webAttribute =
+            if (webAttributeName == "Text") None
+            else Some(webAttributeName)
 //          val newValue : String = dom.document.getElementById("newValueField_stringModificationForm").value.getOrElse("")
           val newValue : String = getElementByImplicitWebProgrammingID("newValueField_stringModificationForm").text()
 //        println("newValue= "+ newValue)
           if(!abort) submitStringModification(StringModification(weID, webAttribute, newValue))
+
       }
 
       val submitStringModificationButton =
@@ -434,10 +427,10 @@ object ScalaJS_Main extends js.JSApp {
     private var lastModification : StringModification = null
     private var timeout: Option[Int] = None
     private def stopTimeout() = {println("stop Text modification timeout"); timeout.foreach(to => dom.window.clearTimeout(to))}
-    private def launchTimeout(stringModification: StringModification) = {println("launch Text modification timeout"); timeout = Some(dom.setTimeout(()=>submitStringModification(stringModification), delay))}
+    private def launchTimeout(stringModification: StringModification) = {println("launch Text modification timeout"); timeout = Some(dom.setTimeout(()=>{lastModification=null; submitStringModification(stringModification)}, delay))}
     private def buildStringModification(webElementID: Int): StringModification = {
       val newValue = getElementByImplicitWebProgrammingID(webElementID.toString).text()
-      StringModification(webElementID, Text, newValue)
+      StringModification(webElementID, None, newValue)
     }
 
     def newStringModificationOfTheTextWebAttr(webElementID: Int) = {
@@ -462,7 +455,7 @@ object ScalaJS_Main extends js.JSApp {
   def renderWebPage(webPageWithIDedWebElements: WebPageWithIDedWebElements, destinationDivID: String) = {
     val webPageDiv = <.div(
       ^.id := "webPage",
-      leonListToList(webPageWithIDedWebElements.sons).map(convertWebElementWithIDToReactElement)
+      convertWebElementWithIDToReactElement(webPageWithIDedWebElements.main)
     )
     ReactDOM.render(webPageDiv, document.getElementById(destinationDivID))
   }
@@ -481,7 +474,7 @@ object ScalaJS_Main extends js.JSApp {
     * @param webElWithID
     * @return
     */
-  def convertWebElementWithIDToReactElement(webElWithID: WebElement /*, idGenerator: IDGenerator*/) : ReactElement = {
+  def convertWebElementWithIDToReactElement(webElWithID: WebElement /*, idGenerator: IDGenerator*/) : ReactNode = {
 //    val webElID = /*idGenerator.generateID()*/ 0
     def generateTextChangeCallback(webElID: Int) = {
       Callback{
@@ -513,83 +506,91 @@ object ScalaJS_Main extends js.JSApp {
     //          case leon.lang.None() => ""
     //        }
     //        <.p(text)
-          case Input(/*webElID,*/tpe, placeHolder, text) =>
-            <.input(^.tpe := tpe, ^.placeholder := placeHolder, ^.value := text)
-          case Header(/*webElID,*/ text, level) =>
+//<<<<<<< HEAD
+//          case Input(/*webElID,*/tpe, placeHolder, text) =>
+//            <.input(^.tpe := tpe, ^.placeholder := placeHolder, ^.value := text)
+//          case Header(/*webElID,*/ text, level) =>
+//            val textChangeCallback = generateTextChangeCallback(webElID)
+//            level match {
+//              case HLOne() =>
+//                <.h1(
+//                  text,
+//                  reservedAttributeForImplicitWebProgrammingID := webElID,
+//                  ^.title := "webElID= "+webElID,
+//                  ^.contentEditable := "true",
+//                  ^.onChange --> textChangeCallback,
+//                  ^.onInput --> textChangeCallback
+//                )
+//              case HLTwo() =>
+//                <.h2(
+//                  text,
+//                  reservedAttributeForImplicitWebProgrammingID := webElID,
+//                  ^.title := "webElID= "+webElID,
+//                  ^.contentEditable := "true",
+//                  ^.onChange --> textChangeCallback,
+//                  ^.onInput --> textChangeCallback
+//                )
+//              case HLThree() =>
+//                <.h3(
+//                  text,
+//                  reservedAttributeForImplicitWebProgrammingID := webElID,
+//                  ^.title := "webElID= "+webElID,
+//                                    ^.contentEditable := "true",
+//                  ^.onChange --> textChangeCallback,
+//                  ^.onInput --> textChangeCallback
+//                )
+//              case HLFour() =>
+//                <.h4(
+//                  text,
+//                  reservedAttributeForImplicitWebProgrammingID := webElID,
+//                  ^.title := "webElID= "+webElID,
+//                                    ^.contentEditable := "true",
+//                  ^.onChange --> textChangeCallback,
+//                  ^.onInput --> textChangeCallback
+//                )
+//              case HLFive() =>
+//                <.h5(
+//                  text,
+//                  reservedAttributeForImplicitWebProgrammingID := webElID,
+//                  ^.title := "webElID= "+webElID,
+//                                    ^.contentEditable := "true",
+//                  ^.onChange --> textChangeCallback,
+//                  ^.onInput --> textChangeCallback
+//                )
+//              case HLSix() =>
+//                <.h6(
+//                  text,
+//                  reservedAttributeForImplicitWebProgrammingID := webElID,
+//                  ^.title := "webElID= "+webElID,
+//                                    ^.contentEditable := "true",
+//                  ^.onChange --> textChangeCallback,
+//                  ^.onInput --> textChangeCallback
+//                )
+//            }
+//          case Paragraph(/*webElID,*/ text) =>
+//            val textChangeCallback = generateTextChangeCallback(webElID)
+//            val p = <.p(
+//              text,
+//              reservedAttributeForImplicitWebProgrammingID := webElID,
+//              ^.contentEditable := "true",
+//              ^.onChange --> textChangeCallback,
+//              ^.onInput --> textChangeCallback,
+          case TextElement(text) =>
             val textChangeCallback = generateTextChangeCallback(webElID)
-            level match {
-              case HLOne() =>
-                <.h1(
-                  text,
-                  reservedAttributeForImplicitWebProgrammingID := webElID,
-                  ^.title := "webElID= "+webElID,
-                  ^.contentEditable := "true",
-                  ^.onChange --> textChangeCallback,
-                  ^.onInput --> textChangeCallback
-                )
-              case HLTwo() =>
-                <.h2(
-                  text,
-                  reservedAttributeForImplicitWebProgrammingID := webElID,
-                  ^.title := "webElID= "+webElID,
-                  ^.contentEditable := "true",
-                  ^.onChange --> textChangeCallback,
-                  ^.onInput --> textChangeCallback
-                )
-              case HLThree() =>
-                <.h3(
-                  text,
-                  reservedAttributeForImplicitWebProgrammingID := webElID,
-                  ^.title := "webElID= "+webElID,
-                                    ^.contentEditable := "true",
-                  ^.onChange --> textChangeCallback,
-                  ^.onInput --> textChangeCallback
-                )
-              case HLFour() =>
-                <.h4(
-                  text,
-                  reservedAttributeForImplicitWebProgrammingID := webElID,
-                  ^.title := "webElID= "+webElID,
-                                    ^.contentEditable := "true",
-                  ^.onChange --> textChangeCallback,
-                  ^.onInput --> textChangeCallback
-                )
-              case HLFive() =>
-                <.h5(
-                  text,
-                  reservedAttributeForImplicitWebProgrammingID := webElID,
-                  ^.title := "webElID= "+webElID,
-                                    ^.contentEditable := "true",
-                  ^.onChange --> textChangeCallback,
-                  ^.onInput --> textChangeCallback
-                )
-              case HLSix() =>
-                <.h6(
-                  text,
-                  reservedAttributeForImplicitWebProgrammingID := webElID,
-                  ^.title := "webElID= "+webElID,
-                                    ^.contentEditable := "true",
-                  ^.onChange --> textChangeCallback,
-                  ^.onInput --> textChangeCallback
-                )
-            }
-          case Paragraph(/*webElID,*/ text) =>
-            val textChangeCallback = generateTextChangeCallback(webElID)
-            val p = <.p(
-              text,
+            <.span(text: ReactNode,
               reservedAttributeForImplicitWebProgrammingID := webElID,
               ^.contentEditable := "true",
               ^.onChange --> textChangeCallback,
               ^.onInput --> textChangeCallback,
               ^.title := "webElID= "+webElID
             )
-            p
-          case Div(/*webElID,*/ sons) =>
+          case Element(tag, sons, attributes) =>
 //            print("I'm a div being processed by convertWebElementWithIDToReactElement. I'm about to apply convertWebElementWithIDToReactElement on each element of the list: " + sons)
-            <.div(
+            tag.reactTag(
               reservedAttributeForImplicitWebProgrammingID := webElID,
               leonListToList(sons).map(convertWebElementWithIDToReactElement),
-              ^.title := "webElID= "+webElID
+              ^.title := "webElID= "+webElID,
+              leonListToList(attributes).map{ x => x.attributeName.reactAttr := x.attributeValue }
             )
           case WebElementWithID(_,_) =>
     //        Should never happen
@@ -607,6 +608,3 @@ object ScalaJS_Main extends js.JSApp {
   }
 
 }
-//Hello world
-//Content editable
-//Formulaire -> requete bdd

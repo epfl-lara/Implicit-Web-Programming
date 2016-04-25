@@ -16,7 +16,6 @@ import logging.serverReporter.Error
 import logging.serverReporter._
 import shared.SourceCodeSubmissionResult
 import stringModification.StringModificationProcessor.TupleSelectOrCaseClassSelect
-import webDSL.webDescription.Register
 
 import scala.reflect.runtime.universe
 import scala.reflect.api
@@ -28,6 +27,40 @@ object ProgramEvaluator {
   val fullNameOfTheFunctionToEvaluate = "Main.main"
   val fullNameOfTheWebPageClass = "webDSL.webDescription.WebPage"
 
+  case class ExceptionDuringConversion(msg:String) extends Exception
+  
+  class ConversionBuilder(sourceMap: SourceMap, sReporter: ServerReporter) {
+    private def getCaseClassDefValOrFail(optionValWithLog: OptionValWithLog[CaseClassDef]) : CaseClassDef = {
+      optionValWithLog match{
+        case OptionValWithLog(Some(value), log) => value
+        case OptionValWithLog(None, log) =>
+          throw ExceptionDuringConversion(log)
+      }
+    }
+    val webPageCaseClassDef = getCaseClassDefValOrFail(sourceMap.webPage_webElementCaseClassDef(sReporter))
+    val textElementCaseClassDef = getCaseClassDefValOrFail(sourceMap.textElement_webElementCaseClassDef(sReporter))
+    val elementCaseClassDef = getCaseClassDefValOrFail(sourceMap.element_webElementCaseClassDef(sReporter))
+    val webPropertyCaseClassDef = getCaseClassDefValOrFail(sourceMap.webAttribute_webElementCaseClassDef(sReporter))
+    val consCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonCons_caseClassDef(sReporter))
+    val nilCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonNil_caseClassDef(sReporter))
+//        println("paragraph caseClassDef: " + paragraphCaseClassDef)
+//        println("div caseClassDef" + divCaseClassDef)
+//        println("cons caseClassDef" + consCaseClassDef)
+//        println("nil caseClassDef" + nilCaseClassDef)
+
+    def exprOfLeonListOfExprToLeonListOfExpr(leonListExpr: Expr) : leon.collection.List[Expr] = {
+      val actualLeonListExpr = TupleSelectAndCaseClassSelectRemover.removeTopLevelTupleSelectsAndCaseClassSelects(leonListExpr)
+      actualLeonListExpr match {
+        case CaseClass(CaseClassType(`consCaseClassDef`, targs), args) =>
+          args match {
+            case List(elem, remainingList) => leon.collection.List(elem) ++ exprOfLeonListOfExprToLeonListOfExpr(remainingList)
+          }
+        case CaseClass(CaseClassType(`nilCaseClassDef`, targs), args) => leon.collection.List()
+      }
+    }
+  }
+
+  
   def evaluateAndConvertResult(program: Program, sourceCode: String, serverReporter: ServerReporter): (Option[(WebPageWithIDedWebElements, SourceMap)], String) = {
     val sReporter = serverReporter.startProcess("ProgramEvaluator")
     val resultWebPage: Option[(WebPageWithIDedWebElements, SourceMap)] = evaluateProgram(program, sReporter) match {
@@ -85,7 +118,7 @@ object ProgramEvaluator {
   private def convertWebPageExprToClientWebPageAndSourceMap(webPageEvaluatedExpr: Expr, webPageEvaluationTreeExpr: Expr, program: Program, sourceCode: String, serverReporter: ServerReporter): Option[(WebPageWithIDedWebElements, SourceMap)] = {
 
     val sReporter = serverReporter.startFunction("Converting the WebPage Expr into a WebPage, and building the sourceMap")
-    case class ExceptionDuringConversion(msg:String) extends Exception
+    
 
     //sReporter.report(Info, "webPage expr to be converted: "+ webPageEvaluatedExpr)
 
@@ -107,7 +140,8 @@ object ProgramEvaluator {
 
       def unExpr(sReporter: ServerReporter)(e: Expr): Any = {
         //sReporter.report(Info, "Unexpring " + e)
-        e match {
+        val actualExpr = TupleSelectAndCaseClassSelectRemover.removeTopLevelTupleSelectsAndCaseClassSelects(e)
+        actualExpr match {
           case CaseClass(CaseClassType(caseClassDef, targs), args) => {
             constructorMap.get(caseClassDef) match {
               case Some((constructor, isWebElement)) =>
@@ -125,7 +159,7 @@ object ProgramEvaluator {
           }
           case l: Literal[_] => l.value
 //            unapply magic
-          case TupleSelectOrCaseClassSelect(actualExpr) => unExpr(sReporter)(actualExpr)
+//          case TupleSelectOrCaseClassSelect(actualExpr) => unExpr(sReporter)(actualExpr)
           case _ =>
 //            unExpr(sReporter)(stringModification.StringModificationProcessor.simplifyCaseSelect(e))
             sReporter.report(Info, "Unexpr default case, something is probably wrong")
@@ -135,45 +169,16 @@ object ProgramEvaluator {
       def buildSourceMapAndGiveIDsToWebElements(webPage: WebPage, resultEvaluationTreeExpr: Expr, sourceCode: String, program: Program, serverReporter: ServerReporter): (WebPageWithIDedWebElements, SourceMap) = {
         val sReporter = serverReporter.startFunction("buildSourceMapAndGiveIDsToWebElements")
         val sourceMap = new SourceMap(sourceCode, program)
-        val bootstrapWebElementLeonList: leon.collection.List[WebElement] = webPage match {
-          case WebPage(webPAttr, sons) => sons
+        val bootstrapWebElement: WebElement = webPage match {
+          case WebPage(elem) => elem
         }
-        def getCaseClassDefValOrFail(optionValWithLog: OptionValWithLog[CaseClassDef]) : CaseClassDef = {
-          optionValWithLog match{
-            case OptionValWithLog(Some(value), log) => value
-            case OptionValWithLog(None, log) =>
-              throw ExceptionDuringConversion(log)
-          }
-        }
-        val webPageCaseClassDef = getCaseClassDefValOrFail(sourceMap.webPage_webElementCaseClassDef(sReporter))
-        val paragraphCaseClassDef = getCaseClassDefValOrFail(sourceMap.paragraph_webElementCaseClassDef(sReporter))
-        val headerCaseClassDef = getCaseClassDefValOrFail(sourceMap.header_webElementCaseClassDef(sReporter))
-        val inputCaseClassDef = getCaseClassDefValOrFail(sourceMap.input_webElementCaseClassDef(sReporter))
-        val divCaseClassDef = getCaseClassDefValOrFail(sourceMap.div_webElementCaseClassDef(sReporter))
-        val consCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonCons_caseClassDef(sReporter))
-        val nilCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonNil_caseClassDef(sReporter))
-//        println("paragraph caseClassDef: " + paragraphCaseClassDef)
-//        println("div caseClassDef" + divCaseClassDef)
-//        println("cons caseClassDef" + consCaseClassDef)
-//        println("nil caseClassDef" + nilCaseClassDef)
-
-        def exprOfLeonListOfExprToLeonListOfExpr(leonListExpr: Expr) : leon.collection.List[Expr] = {
-          val actualLeonListExpr = TupleSelectAndCaseClassSelectRemover.removeTopLevelTupleSelectsAndCaseClassSelects(leonListExpr)
-          actualLeonListExpr match {
-            case CaseClass(CaseClassType(`consCaseClassDef`, targs), args) =>
-              args match {
-                case List(elem, remainingList) => leon.collection.List(elem) ++ exprOfLeonListOfExprToLeonListOfExpr(remainingList)
-              }
-            case CaseClass(CaseClassType(`nilCaseClassDef`, targs), args) => leon.collection.List()
-          }
-        }
-        val bootstrapExprOfUnevaluatedWebElementLeonList : leon.collection.List[Expr] = resultEvaluationTreeExpr match {
-          case CaseClass(CaseClassType(`webPageCaseClassDef`, targs_1), args) =>
-            args match {
-              case List(webPageAttributeListExpr, webPageSonsListExpr) =>
-                exprOfLeonListOfExprToLeonListOfExpr(webPageSonsListExpr)
+        val cb = new ConversionBuilder(sourceMap, serverReporter)
+        import cb._
+        
+        val bootstrapExprOfUnevaluatedWebElement : Expr = resultEvaluationTreeExpr match {
+          case CaseClass(CaseClassType(`webPageCaseClassDef`, targs_1), Seq(arg)) =>
+            arg
             }
-        }
         def leonListToList[T](leonList: leon.collection.List[T]): List[T] = {
           val listBuffer = leonList.foldLeft(scala.collection.mutable.ListBuffer[T]())((list, elem)=>list += elem)
           listBuffer.toList
@@ -221,32 +226,22 @@ object ProgramEvaluator {
                     |   Expr: $actualCorrespondingUnevaluatedExpr
                   """.stripMargin)
               WebElementWithID(webElement, 0)
-            case Paragraph(text: String) =>
-              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, paragraphCaseClassDef, "Paragraph", sReporter)
+            case TextElement(text: String) =>
+              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, textElementCaseClassDef, "TextElement", sReporter)
               val id = generateID()
               sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
               WebElementWithID(webElement, id)
-            case Header(text: String, level: HeaderLevel) =>
-              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, headerCaseClassDef, "Header", sReporter)
-              val id = generateID()
-              sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
-              WebElementWithID(webElement, id)
-            case Input(tpe, placeHolder, text) =>
-              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, inputCaseClassDef, "Input", sReporter)
-              val id = generateID()
-              sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
-              WebElementWithID(webElement, id)
-            case Div(sons: leon.collection.List[WebElement]) =>
-              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, divCaseClassDef, "Div", sReporter)
+            case Element(tag: String, sons: leon.collection.List[WebElement], properties: leon.collection.List[WebAttribute]) =>
+              sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, elementCaseClassDef, "Element", sReporter)
               actualCorrespondingUnevaluatedExpr match {
-                case CaseClass(CaseClassType(`divCaseClassDef`, targs), args) => {
+                case CaseClass(CaseClassType(`elementCaseClassDef`, targs), List(argTag, argSons, argProperties)) => {
                   val id = generateID()
                   sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
-                  val sonsWebElemCorrespUnevalExprCouplLeonList = sons.zip(exprOfLeonListOfExprToLeonListOfExpr(args(0)))
+                  val sonsWebElemCorrespUnevalExprCouplLeonList = sons.zip(exprOfLeonListOfExprToLeonListOfExpr(argSons))
                   val iDedSons : leon.collection.List[WebElement]= sonsWebElemCorrespUnevalExprCouplLeonList.map(
                     {case (webElem, correspUnevalExpr) => giveIDToWebElementsAndFillSourceMap(sourceMap, sReporter)(webElem, correspUnevalExpr)}
                   )
-                  WebElementWithID(Div(iDedSons), id)
+                  WebElementWithID(Element(tag, iDedSons, properties), id)
                 }
               }
           }
@@ -259,11 +254,9 @@ object ProgramEvaluator {
               resultUnderConstruction.reverse
           }
         }
-        assert(bootstrapWebElementLeonList.size == bootstrapExprOfUnevaluatedWebElementLeonList.size)
-        val bootstrapList : leon.collection.List[(WebElement, Expr)]= bootstrapWebElementLeonList.zip[Expr](bootstrapExprOfUnevaluatedWebElementLeonList)
         val webPageWithIDedElements = WebPageWithIDedWebElements(
-          webPage.webPageAttributes,
-          bootstrapList.map[WebElementWithID]( {case (webElem, expr) => giveIDToWebElementsAndFillSourceMap(sourceMap, sReporter)(webElem, expr)})
+          //webPage.webPageAttributes,
+          giveIDToWebElementsAndFillSourceMap(sourceMap, sReporter)(bootstrapWebElement, bootstrapExprOfUnevaluatedWebElement)
         )
         (webPageWithIDedElements, sourceMap)
       }

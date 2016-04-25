@@ -20,7 +20,7 @@ object TupleSelectAndCaseClassSelectRemover {
         case CaseClassSelector(cct, inExpr, id) =>
           recurse(CaseClassSelector(cct, recurse(inExpr), id))
         case AsInstanceOf(expr2, classType) =>
-          expr2
+          recurse(expr2)
         case _ => expr1
       }
     }
