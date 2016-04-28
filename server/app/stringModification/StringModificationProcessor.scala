@@ -143,7 +143,7 @@ object StringModificationProcessor {
             case "WebBuilder.scala" => (List(Left(string)), assignmentMap, posToId)
             case _ =>
               if(actualTextExpr.getPos.line == -1) throw new Exception("Line is -1 on " + actualTextExpr)
-              val identifier = posToId.getOrElse(actualTextExpr.getPos, Common.FreshIdentifier("l:"+actualTextExpr.getPos.line+",c:"+actualTextExpr.getPos.col).copiedFrom(textExpr))
+              val identifier = posToId.getOrElse(actualTextExpr.getPos, Common.FreshIdentifier("l:"+actualTextExpr.getPos.line+",c:"+actualTextExpr.getPos.col).copiedFrom(actualTextExpr))
               println("Creating identifier " +identifier + " -> file " + actualTextExpr.getPos.file.getName + " \"" + string + "\"")
               (List(Right(identifier)), assignmentMap + (identifier -> string), posToId+(actualTextExpr.getPos -> identifier))
           }
