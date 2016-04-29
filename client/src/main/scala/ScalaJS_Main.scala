@@ -88,6 +88,7 @@ object ScalaJS_Main extends js.JSApp {
     }
   }
 
+  private var idOfLastStringModificationSent = 0
   def submitStringModification(stringModification: StringModification) = {
     println(
       s"""Send String Modification:
@@ -95,29 +96,44 @@ object ScalaJS_Main extends js.JSApp {
         |ModifiedWebAttribute: ${stringModification.modifiedWebAttribute}
         |NewValue: ${stringModification.newValue}
       """.stripMargin)
-    AjaxClient[Api].submitStringModification(stringModification).call().onComplete {
+    idOfLastStringModificationSent += 1
+    AjaxClient[Api].submitStringModification(StringModificationForNetwork(stringModification, idOfLastStringModificationSent)).call().onComplete {
       case Failure(exception) => {println("error during submission of modification: " + exception)}
       case Success(stringModificationSubmissionResult) => {
         println("Server sent something in response to a string modification submission")
         stringModificationSubmissionResult match {
-          case StringModificationSubmissionResult(Some((newSourceCode, webPageWithIDedWebElements)), log) => {
+          case StringModificationSubmissionResultForNetwork(
+            StringModificationSubmissionResult(Some((newSourceCode, webPageWithIDedWebElements)), log),
+            stringModID
+          ) => {
 //            println(
 //              s"""
-//                 |Received new source code: $newSourceCode
+//                 |Received new source code with stringModificationID of $stringModID: $newSourceCode
 //                  """.stripMargin)
             println(
               s"""
-                 |Received new source code: TEMPORARY DISABLED
+                 |Received new source code with stringModificationID of $stringModID: TEMPORARY DISABLED
                   """.stripMargin)
-            renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
+            if (stringModID == idOfLastStringModificationSent) {
+              renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
+              println("Accepting the stringModificationResult with id: "+stringModID)
+            }
+            else {
+              println("Rejecting outdated stringModificationResult (id= "+stringModID+", while the id of the last StringModification sent is: "+idOfLastStringModificationSent+")")
+            }
 //            remove the standard onChange callback of the Ace Editor, so that the "submit source code change" button does not turn red
 //            because of the following call to AceEditor.setEditorValue
             AceEditor.removeAceEdOnChangeCallback()
             AceEditor.setEditorValue(newSourceCode)
             AceEditor.activateAceEdOnChangeCallback_standard()
           }
-          case StringModificationSubmissionResult(None, log) => {
+          case StringModificationSubmissionResultForNetwork(
+            StringModificationSubmissionResult(None, log),
+            stringModID
+          ) => {
             println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
+            println("Received a StringModificationSubmissionResult from the server, but without sourceCode. Here is the log sent by the server:")
+            println("\"" + log + "\"")
           }
         }
       }

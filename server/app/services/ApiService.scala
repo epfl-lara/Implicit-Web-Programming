@@ -46,13 +46,16 @@ class ApiService extends Api{
   //  def submitHtml(don't know, something that indicate a change made to the html): String //New Source Code
 
 
-  override def submitStringModification(stringModification: StringModification): StringModificationSubmissionResult = {
+  override def submitStringModification(stringModificationForNetwork: StringModificationForNetwork): StringModificationSubmissionResultForNetwork = {
     val sReporter = new ServerReporter
+    val stringModification = stringModificationForNetwork.stringModification
+    val stringModID = stringModificationForNetwork.stringModID
     sReporter.report(Info,
       s"""Received a string modification from the client:
          |  webElementID: ${stringModification.webElementID}
          |  modified WebAttribute${stringModification.modifiedWebAttribute}
          |  new value: ${stringModification.newValue}
+         |  id: ${stringModID}
        """.stripMargin
     )
     val weID = stringModification.webElementID
@@ -62,7 +65,6 @@ class ApiService extends Api{
          |${weExprFromSourceMap}
        """.stripMargin)
 
-    StringModificationProcessor.process(stringModification, sReporter)
-//    StringModificationSubmissionResult(Some("hey"), "")
+    StringModificationSubmissionResultForNetwork(StringModificationProcessor.process(stringModification, sReporter), stringModID)
   }
 }
