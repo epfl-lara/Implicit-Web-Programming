@@ -1,11 +1,13 @@
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing.Timer
+
 import japgolly.scalajs.react.{Callback, CallbackTo, ReactDOM, ReactElement}
 import org.scalajs.dom
 import dom.{Element, document}
 import shared._
 import leon.webDSL.webDescription._
 import leon.lang.Map._
+
 import scalatags.JsDom.all._
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, ScalaJSDefined}
@@ -15,6 +17,8 @@ import org.scalajs.jquery.{JQuery, JQueryAjaxSettings, JQueryEventObject, JQuery
 import scala.util.{Failure, Success}
 import com.scalawarrior.scalajs.ace._
 import japgolly.scalajs.react.vdom.prefix_<^._
+
+import scala.collection.mutable.ListBuffer
 
 /** Imports for using AjaxClient **/
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -111,6 +115,7 @@ object ScalaJS_Main extends js.JSApp {
     println("jquery request: "+"["+reservedAttributeForImplicitWebProgrammingID_name+"="+impWebProgID+"]")
 //    val res = dom.document.querySelector("["+reservedAttributeForImplicitWebProgrammingID_name+"="+impWebProgID+"]")
     val res = $("["+reservedAttributeForImplicitWebProgrammingID_name+"="+impWebProgID+"]")
+//    $("[data-reservedattributeforimplicitwebprogrammingid="+impWebProgID+"]")
     println("end of getElementByImplicitWebProgrammingID")
     res
   }
@@ -143,6 +148,10 @@ object ScalaJS_Main extends js.JSApp {
   @ScalaJSDefined
   trait AugmentedElement extends Element {
     val value: js.UndefOr[String]
+    val innerText: js.UndefOr[String]
+    val text: js.UndefOr[String]
+//    val textContent: js.UndefOr[String]
+//    val textContent: String
   }
   implicit def elementAugmentation(e: Element): AugmentedElement ={
     e.asInstanceOf[AugmentedElement]
@@ -423,16 +432,29 @@ object ScalaJS_Main extends js.JSApp {
 //  After the edition of a string by the user, the client will wait 'delay' ms before sending the StringModification to the server
 //  The delay will be reinitialised after each modification To THE SAME ATTRIBUTE OF THE SAME ELEMENT!
 //  (so modifications to other webElements/webAttributes done during the delay WILL NOT BE TAKEN INTO ACCOUNT)
-    private val delay = 500
+    private val delay = 1000
     private var lastModification : StringModification = null
     private var timeout: Option[Int] = None
     private def stopTimeout() = {println("stop Text modification timeout"); timeout.foreach(to => dom.window.clearTimeout(to))}
     private def launchTimeout(stringModification: StringModification) = {println("launch Text modification timeout"); timeout = Some(dom.setTimeout(()=>{lastModification=null; submitStringModification(stringModification)}, delay))}
     private def buildStringModification(webElementID: Int): StringModification = {
-      val newValue = getElementByImplicitWebProgrammingID(webElementID.toString).text()
+//      println("WebElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).innerText)
+//      val newValue = getElementByImplicitWebProgrammingID("7")(0).innerText.get /*match {*/
+//      println("textContent of webElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).textContent)
+      println("innerText of webElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).innerText)
+//      println("text of webElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).text)
+//      val newValue = getElementByImplicitWebProgrammingID("7")(0).innerText.get /*match {*/
+//      val newValue = getElementByImplicitWebProgrammingID("7")(0).text.getOrElse("getOrElseFailed") /*match {*/
+      val newValue = getElementByImplicitWebProgrammingID("7")(0).innerText.getOrElse("getOrElseFailed") /*match {*/
+//  case Some(string) => string
+//  case None =>
+//    print("ERROR: StringModificationSubmitter was unable to get the innerText of the webElement of impliciWebProgrammingID: "+webElementID)
+//    throw new RuntimeException("ERROR: StringModificationSubmitter was unable to get the innerText of the webElement of impliciWebProgrammingID: "+webElementID)
+//}
+      //      val newValue = getElementByImplicitWebProgrammingID(webElementID.toString).text()
+
       StringModification(webElementID, None, newValue)
     }
-
     def newStringModificationOfTheTextWebAttr(webElementID: Int) = {
       if (lastModification != null) {
         if (lastModification.webElementID == webElementID) {
@@ -468,18 +490,36 @@ object ScalaJS_Main extends js.JSApp {
 //  an attribute to store the webElement IDs attributed during the execution of the program
   val impWebProgIDAttr = "data-impwebprogid".reactAttr
 
+
   /**
     * This function should only be given WebElementWithID
     *
     * @param webElWithID
     * @return
     */
-  def convertWebElementWithIDToReactElement(webElWithID: WebElement /*, idGenerator: IDGenerator*/) : ReactNode = {
+  def convertWebElementWithIDToReactElement(webElWithID: WebElement) : ReactNode = {
 //    val webElID = /*idGenerator.generateID()*/ 0
     def generateTextChangeCallback(webElID: Int) = {
       Callback{
         StringModificationSubmitter.newStringModificationOfTheTextWebAttr(webElID)
       }
+    }
+
+    def splitTextIntoReactNodeSeq(text: String): Seq[ReactNode] = {
+      text.split("(?=\n)").flatMap( (element: String) =>
+        if(element.startsWith("\n")) {
+          List[ReactNode](
+            <.br,
+            element.substring(1) : ReactNode
+          )
+        }
+        else if(element == "") {
+         List[ReactNode]()
+        }
+        else {
+          List[ReactNode](element: ReactNode)
+        }
+      )
     }
 //    val textChangeCallBack = Callback{
 //      StringModificationSubmitter.newStringModificationOfTheTextWebAttr(webElID)
@@ -577,7 +617,7 @@ object ScalaJS_Main extends js.JSApp {
 //              ^.onInput --> textChangeCallback,
           case TextElement(text) =>
             val textChangeCallback = generateTextChangeCallback(webElID)
-            <.span(text: ReactNode,
+            <.span(splitTextIntoReactNodeSeq(text),
               reservedAttributeForImplicitWebProgrammingID := webElID,
               ^.contentEditable := "true",
               ^.onChange --> textChangeCallback,
