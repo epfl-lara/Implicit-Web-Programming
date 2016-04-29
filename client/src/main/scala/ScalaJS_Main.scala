@@ -466,14 +466,8 @@ object ScalaJS_Main extends js.JSApp {
     private def stopTimeout() = {println("stop Text modification timeout"); timeout.foreach(to => dom.window.clearTimeout(to))}
     private def launchTimeout(stringModification: StringModification) = {println("launch Text modification timeout"); timeout = Some(dom.setTimeout(()=>{lastModification=null; submitStringModification(stringModification)}, delay))}
     private def buildStringModification(webElementID: Int): StringModification = {
-//      println("WebElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).innerText)
-//      val newValue = getElementByImplicitWebProgrammingID("7")(0).innerText.get /*match {*/
-//      println("textContent of webElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).textContent)
-      println("innerText of webElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).innerText)
-//      println("text of webElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).text)
-//      val newValue = getElementByImplicitWebProgrammingID("7")(0).innerText.get /*match {*/
-//      val newValue = getElementByImplicitWebProgrammingID("7")(0).text.getOrElse("getOrElseFailed") /*match {*/
-      val newValue = getElementByImplicitWebProgrammingID("7")(0).innerText.getOrElse("getOrElseFailed") /*match {*/
+//      println("innerText of webElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).innerText)
+      val newValue = getElementByImplicitWebProgrammingID(webElementID.toString)(0).innerText.getOrElse("getOrElseFailed in StringModificationSubmitter") /*match {*/
 //  case Some(string) => string
 //  case None =>
 //    print("ERROR: StringModificationSubmitter was unable to get the innerText of the webElement of impliciWebProgrammingID: "+webElementID)
