@@ -29,6 +29,13 @@ import scala.language.implicitConversions
 import japgolly.scalajs.react.ReactNode
 /** **/
 
+
+@ScalaJSDefined
+trait Offset extends js.Any {
+  val top: Double
+  val left: Double
+}
+
 object ScalaJS_Main extends js.JSApp {
   import shared.Picklers._
 
@@ -43,6 +50,14 @@ object ScalaJS_Main extends js.JSApp {
     //    includeScriptInMainTemplate(script("console.info(\"hey\")"))
     fillSourceCodeDiv()
     fillViewerDiv()
+    
+    if(js.Dynamic.global.location.href.indexOf("admin=true").asInstanceOf[Int] == -1) {
+      $("#htmlMenu").hide()
+    } else {
+      $("#SourceCodeDiv #aceeditor").css("height",
+          "calc(100% - "+$("#aceeditor").offset().asInstanceOf[Offset].top+"px)")
+    }
+    
     /*TODO: Intention: the client would make an automatic code submission of the bootstrap code right after being loaded.
       TODO: In practice, it seems to sends an empty string as sourcecode to the server
     submitButtonAction() */
@@ -125,6 +140,7 @@ object ScalaJS_Main extends js.JSApp {
     val scalaJSButton = <.button(
       reservedAttributeForImplicitWebProgrammingID := idOfThis,
       ^.className := "btn btn-default",
+      ^.verticalAlign := "-webkit-baseline-middle",
       ^.onClick --> Callback{submitSourceCode()},
       "Run code"
     )
@@ -160,7 +176,7 @@ object ScalaJS_Main extends js.JSApp {
   def fillSourceCodeDiv() = {
     val destinationDivId = "SourceCodeDiv"
 
-    val title = <.h1("Behind the scenes")
+    val title = <.h1("Behind the scenes", ^.display.inline, ^.verticalAlign.middle)
 
     def submitHtmlButtonCallback = Callback{
         println("submit html change")
@@ -246,11 +262,12 @@ object ScalaJS_Main extends js.JSApp {
     )
 
     val divContent = <.div(
+      ^.height := "100%",
       minimizeButton,
       title,
-      aceEditorDiv,
       submitCodeButton,
-      menuHtml
+      menuHtml,
+      aceEditorDiv
     )
     ReactDOM.render(divContent, document.getElementById(destinationDivId))
     $("#minimizeButton").on("click", () => {
@@ -323,7 +340,14 @@ object ScalaJS_Main extends js.JSApp {
     def initialiseAndIncludeEditorInWebPage() = {
       val editor = ace.edit(aceEditorID)
       aceEditor = Some(editor)
-      editor.setTheme("ace/theme/monokai")
+      //editor.setTheme("ace/theme/monokai")
+      //ace.require("ace/token_tooltip"); // From leon-web
+      editor.setTheme("ace/theme/chrome");
+      editor.getSession().setUseWrapMode(true)
+      editor.setShowPrintMargin(false);
+      editor.setAutoScrollEditorIntoView();
+      editor.setHighlightActiveLine(false);
+      
       editor.getSession().setMode("ace/mode/scala")
       editor.getSession().setTabSize(2)
 //      updateEditorContent()
@@ -370,8 +394,12 @@ object ScalaJS_Main extends js.JSApp {
       aceEditor match {
         case Some(e) =>
 //          println("Setting Ace Editor value to: " + value)
+          val line = e.session.getScrollTop()
+          val col = e.session.getScrollLeft()
           e.setValue(value)
           e.selection.clearSelection()
+          e.session.setScrollTop(line)
+          //e.session.setScrollLeft(col) // Uncomment if the API works.
         case None => "[ERROR] fun setEditorValue was called while there was no aceEditor"
       }
     }
