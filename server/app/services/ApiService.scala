@@ -27,9 +27,9 @@ class ApiService extends Api{
     LeonProgramMaker.makeProgram(sourceCode, serverReporter) match {
       case Some(program) =>
         ProgramEvaluator.evaluateAndConvertResult(program, sourceCode, serverReporter) match {
-          case (Some((webPageWithIDedWebElement, sourceMap)), evaluationLog) =>
+          case (Some((webSiteWithIDedContent, sourceMap)), evaluationLog) =>
             Memory.sourceMap = sourceMap
-            return SourceCodeSubmissionResult(Some(webPageWithIDedWebElement), evaluationLog)
+            return SourceCodeSubmissionResult(Some(webSiteWithIDedContent), evaluationLog)
           case (None, evaluationLog) =>
             Memory.sourceMap = null
             return SourceCodeSubmissionResult(None,

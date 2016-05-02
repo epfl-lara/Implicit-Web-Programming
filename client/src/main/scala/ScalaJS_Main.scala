@@ -70,15 +70,15 @@ object ScalaJS_Main extends js.JSApp {
       case Success(sourceCodeProcessingResult) => {
         println("Server sent something in response to a code submission")
         sourceCodeProcessingResult match {
-          case SourceCodeSubmissionResult(Some(webPage), log) => {
+          case SourceCodeSubmissionResult(Some(webSiteWithIDedContent), log) => {
             println(
               s"""
-                 |Received "Some(WebPage)"
+                 |Received "Some(webSiteWithIDedContent)"
                   """.stripMargin)
 //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
 //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
             SourceCodeSubmitButton.removeCustomBackground()
-            renderWebPage(webPage, "htmlDisplayerDiv")
+            renderWebSite(webSiteWithIDedContent, "htmlDisplayerDiv")
           }
           case SourceCodeSubmissionResult(None, log) => {
             println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
@@ -103,7 +103,7 @@ object ScalaJS_Main extends js.JSApp {
         println("Server sent something in response to a string modification submission")
         stringModificationSubmissionResult match {
           case StringModificationSubmissionResultForNetwork(
-            StringModificationSubmissionResult(Some((newSourceCode, webPageWithIDedWebElements)), log),
+            StringModificationSubmissionResult(Some((newSourceCode, webSiteWithIDedContent)), log),
             stringModID
           ) => {
 //            println(
@@ -115,7 +115,8 @@ object ScalaJS_Main extends js.JSApp {
                  |Received new source code with stringModificationID of $stringModID: TEMPORARY DISABLED
                   """.stripMargin)
             if (stringModID == idOfLastStringModificationSent) {
-              renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
+              renderWebSite(webSiteWithIDedContent, "htmlDisplayerDiv")
+//              convertWebPageToReactElement(webPageWithIDedWebElements, "htmlDisplayerDiv")
               println("Accepting the stringModificationResult with id: "+stringModID)
             }
             else {
@@ -272,7 +273,7 @@ object ScalaJS_Main extends js.JSApp {
       //^.bottom := 0,
       //^.left := 0
     )
-    
+
     val minimizeButton = <.div("<< minimize",
         ^.id := "minimizeButton"
     )
@@ -291,7 +292,7 @@ object ScalaJS_Main extends js.JSApp {
     })
     AceEditor.initialiseAndIncludeEditorInWebPage()
   }
-  
+
   def minimizeSourceCodeView(): Unit = {
     $("#SourceCodeDiv").animate(l(left = "-600px"), complete = () => {
       $("#ViewerDiv").removeClass("edited")
@@ -363,7 +364,7 @@ object ScalaJS_Main extends js.JSApp {
       editor.setShowPrintMargin(false);
       editor.setAutoScrollEditorIntoView();
       editor.setHighlightActiveLine(false);
-      
+
       editor.getSession().setMode("ace/mode/scala")
       editor.getSession().setTabSize(2)
 //      updateEditorContent()
@@ -512,12 +513,62 @@ object ScalaJS_Main extends js.JSApp {
 //  def includeScriptInMainTemplate(scriptTagToInclude: scalatags.JsDom.TypedTag[org.scalajs.dom.html.Script]) = {
 //    dom.document.getElementById("scalajsScriptInclusionPoint").appendChild(scriptTagToInclude.render)
 //  }
-  def renderWebPage(webPageWithIDedWebElements: WebPageWithIDedWebElements, destinationDivID: String) = {
-    val webPageDiv = <.div(
+
+  //  TODO: "destinationDivID" should be given as an reservedAttributeForImplicitWebProgrammingID rather than just as a html id.
+  def renderWebSite(webSiteWithIDedContent: WebSiteWithIDedContent, destinationDivID: String) = {
+    var webPageDivIDCounter = 1
+    def generateWebPageDivID() = {
+      val result = "webPageDivID-"+webPageDivIDCounter
+      webPageDivIDCounter += 1
+      result
+    }
+    val webPagesAsReactElement = leonListToList(webSiteWithIDedContent.main.map(
+      {(webPageWithIDedWebElem) =>
+        <.div( ^.id := generateWebPageDivID(), convertWebElementWithIDToReactElement(webPageWithIDedWebElem.main))
+      }
+    ))
+    var tabCounter = 0
+    def getTabCounter(): Int = {
+      tabCounter += 1
+      tabCounter
+    }
+//    The HTML of the tabs is from https://css-tricks.com/functional-css-tabs-revisited/
+    val webPagesTabs = webPagesAsReactElement.map({(webPageAsReactElement) =>
+      {
+        val tabIndex = getTabCounter()
+      <.div(
+        ^.`class` := "tab",
+        <.input(
+          ^.`type` := "radio",
+          ^.id := "tab-"+tabIndex,
+          ^.name := "tab-group-"+tabIndex,
+          ^.checked := (if(tabIndex==1){true}else{false})
+        ),
+        <.label(
+          ^.`for` := "tab-"+tabIndex,
+          "Tab "+tabIndex
+        ),
+        <.div(
+          ^.`class` := "content",
+          webPageAsReactElement
+        )
+      )
+      }
+    })
+    val wholeWebSite = <.div(
+      ^.`class` := "tabs",
+      webPagesTabs
+    )
+    ReactDOM.render(wholeWebSite, document.getElementById(destinationDivID))
+
+  }
+
+  def convertWebPageToReactElement(webPageWithIDedWebElements: WebPageWithIDedWebElements/*, destinationDivID: String*/) = {
+    <.div(
       ^.id := "webPage",
       convertWebElementWithIDToReactElement(webPageWithIDedWebElements.main)
     )
-    ReactDOM.render(webPageDiv, document.getElementById(destinationDivID))
+//    ReactDOM.render(webPageDiv, document.getElementById(destinationDivID))
   }
 
   def leonListToList[T](leonList: leon.collection.List[T]): List[T] = {

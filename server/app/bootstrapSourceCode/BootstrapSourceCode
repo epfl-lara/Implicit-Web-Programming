@@ -37,7 +37,10 @@ object Main {
      
      val choices = <.div(pizzaChoices.map(pizza => check(pizza)))
         
-      val w = WebPage(<.div(h, p, choices, finalButton))
+      val w = WebSite(List(
+        WebPage(<.div(h, p, choices, finalButton)),
+        WebPage(<.div(h, p, choices, finalButton))
+      ))
       w
     }
 }

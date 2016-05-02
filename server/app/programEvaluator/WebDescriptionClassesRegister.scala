@@ -13,6 +13,7 @@ object WebDescriptionClassesRegister {
 
   //The boolean indicates whether it extends WebElement
   val fullNameToConstructorMap : Map[String, (universe.MethodMirror, Boolean)] = Map(
+    ("leon.webDSL.webDescription.WebSite", (getReflectConstructor[WebSite], false)),
     ("leon.webDSL.webDescription.WebPage", (getReflectConstructor[WebPage], false)),
     ("leon.webDSL.webDescription.Element", (getReflectConstructor[Element], true)),
     ("leon.webDSL.webDescription.TextElement", (getReflectConstructor[TextElement], true)),

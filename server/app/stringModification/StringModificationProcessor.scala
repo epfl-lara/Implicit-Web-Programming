@@ -183,9 +183,9 @@ object StringModificationProcessor {
     val apiService = new ApiService
     sReporter.report(Info, "Submitting the new source code (as if the client did it)")
     apiService.submitSourceCode(newSourceCode) match {
-      case SourceCodeSubmissionResult(Some(webPageIDed), _) =>
+      case SourceCodeSubmissionResult(Some(webSiteWithIDedContent), _) =>
         sReporter.report(Info, "Sending back to client the new source code and a WebPage with IDed WebElements")
-        StringModificationSubmissionResult(Some((newSourceCode, webPageIDed)), "")
+        StringModificationSubmissionResult(Some((newSourceCode, webSiteWithIDedContent)), "")
       case SourceCodeSubmissionResult(None, log) =>
         sReporter.report(Info, "The submission of the new source code failed because: "+log)
         StringModificationSubmissionResult(None, log)
