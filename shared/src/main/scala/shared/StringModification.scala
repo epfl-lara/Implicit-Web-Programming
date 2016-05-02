@@ -10,4 +10,4 @@ import leon.webDSL.webDescription._
 // If not, then modifiedWebAttribute is the name of the Attribute we want to modify
 case class StringModification(webElementID: Int, modifiedWebAttribute: Option[String], newValue: String)
 
-case class StringModificationForNetwork(stringModification: StringModification, stringModID: Int)
+case class StringModificationForNetwork(stringModification: StringModification, sourceCodeId: Int, stringModID: Int)

@@ -2,7 +2,6 @@ package programEvaluator
 
 import java.lang.reflect.Type
 import javassist.bytecode.stackmap.TypeTag
-
 import leon.DefaultReporter
 import leon.collection.Cons
 import leon.evaluators.{AbstractEvaluator, EvaluationResults}
@@ -16,9 +15,11 @@ import logging.serverReporter.Error
 import logging.serverReporter._
 import shared.SourceCodeSubmissionResult
 import stringModification.StringModificationProcessor.TupleSelectOrCaseClassSelect
-
 import scala.reflect.runtime.universe
 import scala.reflect.api
+import leon.evaluators.DefaultEvaluator
+import scala.collection.mutable.ListBuffer
+import leon.LeonContext
 
 /**
   * Created by dupriez on 3/10/16.
@@ -29,7 +30,7 @@ object ProgramEvaluator {
 
   case class ExceptionDuringConversion(msg:String) extends Exception
   
-  class ConversionBuilder(sourceMap: SourceMap, sReporter: ServerReporter) {
+  class ConversionBuilder(programExtractor: ProgramExtractor, sReporter: ServerReporter) {
     private def getCaseClassDefValOrFail(optionValWithLog: OptionValWithLog[CaseClassDef]) : CaseClassDef = {
       optionValWithLog match{
         case OptionValWithLog(Some(value), log) => value
@@ -37,18 +38,14 @@ object ProgramEvaluator {
           throw ExceptionDuringConversion(log)
       }
     }
-    val webPageCaseClassDef = getCaseClassDefValOrFail(sourceMap.webPage_webElementCaseClassDef(sReporter))
-    val textElementCaseClassDef = getCaseClassDefValOrFail(sourceMap.textElement_webElementCaseClassDef(sReporter))
-    val elementCaseClassDef = getCaseClassDefValOrFail(sourceMap.element_webElementCaseClassDef(sReporter))
-    val webPropertyCaseClassDef = getCaseClassDefValOrFail(sourceMap.webAttribute_webElementCaseClassDef(sReporter))
-    val webStyleCaseClassDef = getCaseClassDefValOrFail(sourceMap.webStyle_webElementCaseClassDef(sReporter))
-    val consCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonCons_caseClassDef(sReporter))
-    val nilCaseClassDef = getCaseClassDefValOrFail(sourceMap.leonNil_caseClassDef(sReporter))
-//        println("paragraph caseClassDef: " + paragraphCaseClassDef)
-//        println("div caseClassDef" + divCaseClassDef)
-//        println("cons caseClassDef" + consCaseClassDef)
-//        println("nil caseClassDef" + nilCaseClassDef)
-
+    val webPageCaseClassDef = getCaseClassDefValOrFail(programExtractor.webPage_webElementCaseClassDef(sReporter))
+    val textElementCaseClassDef = getCaseClassDefValOrFail(programExtractor.textElement_webElementCaseClassDef(sReporter))
+    val elementCaseClassDef = getCaseClassDefValOrFail(programExtractor.element_webElementCaseClassDef(sReporter))
+    val webPropertyCaseClassDef = getCaseClassDefValOrFail(programExtractor.webAttribute_webElementCaseClassDef(sReporter))
+    val webStyleCaseClassDef = getCaseClassDefValOrFail(programExtractor.webStyle_webElementCaseClassDef(sReporter))
+    val consCaseClassDef = getCaseClassDefValOrFail(programExtractor.leonCons_caseClassDef(sReporter))
+    val nilCaseClassDef = getCaseClassDefValOrFail(programExtractor.leonNil_caseClassDef(sReporter))
+    
     def exprOfLeonListOfExprToLeonListOfExpr(leonListExpr: Expr) : leon.collection.List[Expr] = {
       val actualLeonListExpr = TupleSelectAndCaseClassSelectRemover.removeTopLevelTupleSelectsAndCaseClassSelects(leonListExpr)
       actualLeonListExpr match {
@@ -63,32 +60,47 @@ object ProgramEvaluator {
   }
 
   
-  def evaluateAndConvertResult(program: Program, sourceCode: String, serverReporter: ServerReporter): (Option[(WebPageWithIDedWebElements, SourceMap)], String) = {
+  def evaluateAndConvertResult(program: Program, sourceCode: String, serverReporter: ServerReporter): (Option[(WebPageWithIDedWebElements, () => Option[SourceMap], LeonContext)], String) = {
     val sReporter = serverReporter.startProcess("ProgramEvaluator")
-    val resultWebPage: Option[(WebPageWithIDedWebElements, SourceMap)] = evaluateProgram(program, sReporter) match {
-      case Some((resultEvaluatedExpr, resultEvaluationTreeExpr)) => convertWebPageExprToClientWebPageAndSourceMap(resultEvaluatedExpr, resultEvaluationTreeExpr, program, sourceCode, sReporter)
+    val resultWebPage = evaluateProgramConcrete(program, sReporter) match {
+      case Some(resultEvaluatedExpr) =>
+        convertWebPageExprToClientWebPageAndSourceMap(resultEvaluatedExpr, program, sourceCode, sReporter) match {
+          case Some((webId, sourceMapMaker)) =>
+            val ctx = defaultLeonContext()
+            val resultEvaluationTreeExprLazy = () => {
+              val abstractValue = evaluateProgramAbstract(program, serverReporter)(ctx)
+              abstractValue.map(sourceMapMaker)
+            }
+            Some((webId, resultEvaluationTreeExprLazy, ctx))
+          case None =>
+            None
+        }
+        
       case None => None
     }
     //TODO: give something else than "" (the actual log of the evaluation/conversion process for example)
     resultWebPage match {
-      case Some((webPageWithIDedWebElements, sourceMap)) =>
-        (Some((webPageWithIDedWebElements, sourceMap)),"")
+      case Some((webPageWithIDedWebElements, sourceMap, ctx)) =>
+        (Some((webPageWithIDedWebElements, sourceMap, ctx)),"")
       case None =>
         (None, "")
     }
   }
 
+  private def defaultLeonContext() = {
+    val ctx = leon.Main.processOptions(Seq()).copy(reporter = new DefaultReporter(Set()))
+    ctx.interruptManager.registerSignalHandler()
+    ctx
+  }
+  
   /**
     *
     * @param program
     * @param serverReporter
-    * @return a couple of Expr: (resultEvaluatedExpr, resultEvaluationTreeExpr)
+    * @return resultEvaluationTreeExpr
     */
-  private def evaluateProgram(program: Program, serverReporter: ServerReporter): Option[(Expr, Expr)] = {
+  private def evaluateProgramAbstract(program: Program, serverReporter: ServerReporter)(implicit ctx: LeonContext): Option[Expr] = {
     val sReporter = serverReporter.startFunction("Evaluating Program with leon's Abstract Evaluator")
-    val leonReporter = new DefaultReporter(Set())
-    val ctx = leon.Main.processOptions(Seq()).copy(reporter = leonReporter)
-    ctx.interruptManager.registerSignalHandler()
     val abstractEvaluator = new AbstractEvaluator(ctx, program)
     val mainFunDef = program.lookupFunDef(fullNameOfTheFunctionToEvaluate) match {
       case Some(funDef) => funDef
@@ -100,11 +112,44 @@ object ProgramEvaluator {
     abstractEvaluator.eval(FunctionInvocation(mainFunDef.typed, List())) match {
       case EvaluationResults.Successful((resultEvaluatedExpr, resultEvaluationTreeExpr)) => {
 //        Note: in resultEvaluationTreeExpr, the function calls are replaced by their return value
-        sReporter.report(Info, "Evaluation successful")
-        //TODO: should also export the evaluationTreeExpr
-        //sReporter.report(Info, "Expr of the evaluated webPage: "+ resultEvaluatedExpr)
-        //sReporter.report(Info, "Expr of the unevaluated webPage: "+ resultEvaluationTreeExpr)
-        Some((resultEvaluatedExpr, resultEvaluationTreeExpr))
+        sReporter.report(Info, "Abstract Evaluation successful")
+        Some(resultEvaluationTreeExpr)
+      }
+      case EvaluationResults.EvaluatorError(msg) => {
+        sReporter.report(Error, "Evaluation failed: abstractEvaluator returned an EvaluationError with message: "+msg)
+        None
+      }
+      case EvaluationResults.RuntimeError(msg) => {
+        sReporter.report(Error, "Evaluation failed: abstractEvaluator returned a RuntimeError with message: "+msg)
+        None
+      }
+    }
+  }
+  
+  /**
+    *
+    * @param program
+    * @param serverReporter
+    * @return concrete value of the program execution.
+    */
+  private def evaluateProgramConcrete(program: Program, serverReporter: ServerReporter): Option[Expr] = {
+     val sReporter = serverReporter.startFunction("Evaluating Program with leon's Abstract Evaluator")
+    val leonReporter = new DefaultReporter(Set())
+    val ctx = leon.Main.processOptions(Seq()).copy(reporter = leonReporter)
+    ctx.interruptManager.registerSignalHandler()
+    val defaultEvaluator = new DefaultEvaluator(ctx, program)
+    val mainFunDef = program.lookupFunDef(fullNameOfTheFunctionToEvaluate) match {
+      case Some(funDef) => funDef
+      case None => {
+        sReporter.report(Error, "lookupFunDef(\"" + fullNameOfTheFunctionToEvaluate + "\") gave no result")
+        return None
+      }
+    }
+    defaultEvaluator.eval(FunctionInvocation(mainFunDef.typed, List())) match {
+      case EvaluationResults.Successful(res) => {
+//        Note: in resultEvaluationTreeExpr, the function calls are replaced by their return value
+        sReporter.report(Info, "Concrete Evaluation successful")
+        Some(res)
       }
       case EvaluationResults.EvaluatorError(msg) => {
         sReporter.report(Error, "Evaluation failed: abstractEvaluator returned an EvaluationError with message: "+msg)
@@ -117,14 +162,14 @@ object ProgramEvaluator {
     }
   }
 
-  private def convertWebPageExprToClientWebPageAndSourceMap(webPageEvaluatedExpr: Expr, webPageEvaluationTreeExpr: Expr, program: Program, sourceCode: String, serverReporter: ServerReporter): Option[(WebPageWithIDedWebElements, SourceMap)] = {
+  // The second element takes the result of the abstract Evaluator and updates the source map.
+  private def convertWebPageExprToClientWebPageAndSourceMap(webPageEvaluatedExpr: Expr, program: Program, sourceCode: String, serverReporter: ServerReporter): Option[(WebPageWithIDedWebElements, Expr => SourceMap)] = {
 
     val sReporter = serverReporter.startFunction("Converting the WebPage Expr into a WebPage, and building the sourceMap")
     
-
     //sReporter.report(Info, "webPage expr to be converted: "+ webPageEvaluatedExpr)
 
-    val result: Either[(WebPageWithIDedWebElements, SourceMap), String] = try {
+    val result: Either[(WebPageWithIDedWebElements, Expr => SourceMap), String] = try {
       /** Looking up the case classes of webDSL_Leon**/
       def lookupCaseClass(program: Program)(caseClassFullName: String): CaseClassDef = {
         program.lookupCaseClass(caseClassFullName) match {
@@ -168,26 +213,20 @@ object ProgramEvaluator {
         }
       }
 
-      def buildSourceMapAndGiveIDsToWebElements(webPage: WebPage, resultEvaluationTreeExpr: Expr, sourceCode: String, program: Program, serverReporter: ServerReporter): (WebPageWithIDedWebElements, SourceMap) = {
+      def buildSourceMapAndGiveIDsToWebElements(webPage: WebPage, sourceCode: String, program: Program, serverReporter: ServerReporter): (WebPageWithIDedWebElements, Expr => SourceMap) = {
         val sReporter = serverReporter.startFunction("buildSourceMapAndGiveIDsToWebElements")
-        val sourceMap = new SourceMap(sourceCode, program)
         val bootstrapWebElement: WebElement = webPage match {
           case WebPage(elem) => elem
         }
-        val cb = new ConversionBuilder(sourceMap, serverReporter)
+        val cb = new ConversionBuilder(new ProgramExtractor(program), serverReporter)
         import cb._
         
-        val bootstrapExprOfUnevaluatedWebElement : Expr = resultEvaluationTreeExpr match {
-          case CaseClass(CaseClassType(`webPageCaseClassDef`, targs_1), Seq(arg)) =>
-            arg
-        }
         def leonListToList[T](leonList: leon.collection.List[T]): List[T] = {
-          val listBuffer = leonList.foldLeft(scala.collection.mutable.ListBuffer[T]())((list, elem)=>list += elem)
+          val listBuffer = leonList.foldLeft(ListBuffer[T]())((list, elem)=>list += elem)
           listBuffer.toList
         }
-        var counterID = 0
-        def generateID() = {counterID+=1; counterID}
-        /**
+        
+        /*
           * Traverse webElement and the correspondingUnevaluated Expr at the same time.
           * Creates a tree corresponding to webElement, but made of WebElementWithID.
           * Add the mappings Id -> UnevaluatedExpr to sourceMap
@@ -197,7 +236,7 @@ object ProgramEvaluator {
           * @param correspondingUnevaluatedExpr
           * @return
           */
-        def giveIDToWebElementsAndFillSourceMap(sourceMap: SourceMap, sReporter: ServerReporter)(webElement: WebElement, correspondingUnevaluatedExpr: Expr) : WebElementWithID = {
+        def giveIDToWebElementsAndFillSourceMap(id: Int, webElement: WebElement, correspondingUnevaluatedExpr: Expr, sourceMap: SourceMap, sReporter: ServerReporter) : (WebElementWithID, Int) = {
           //sReporter.report(Info, "Processing: webElement: "+webElement+" and corresponding unevaluated Expr: "+correspondingUnevaluatedExpr)
           def sanityCheck(webElement: WebElement, correspondingUnevaluatedExpr: Expr, caseClassDef: CaseClassDef, webElementName: String, sReporter:ServerReporter): Unit = {
             correspondingUnevaluatedExpr match {
@@ -228,25 +267,64 @@ object ProgramEvaluator {
                     |   WebElementWithID: $webElement
                     |   Expr: $actualCorrespondingUnevaluatedExpr
                   """.stripMargin)
-              WebElementWithID(webElement, 0)
+              (WebElementWithID(webElement, 0), id)
             case TextElement(text: String) =>
               sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, textElementCaseClassDef, "TextElement", sReporter)
-              val id = generateID()
               sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
-              WebElementWithID(webElement, id)
+              (WebElementWithID(webElement, id), id+1)
             case Element(tag: String, sons, properties, styles) =>
               sanityCheck(webElement, actualCorrespondingUnevaluatedExpr, elementCaseClassDef, "Element", sReporter)
               actualCorrespondingUnevaluatedExpr match {
                 case CaseClass(CaseClassType(`elementCaseClassDef`, targs), List(argTag, argSons, argProperties, argStyles)) =>
-                  val id = generateID()
                   sourceMap.addMapping(id, webElement, actualCorrespondingUnevaluatedExpr)
                   val sonsWebElemCorrespUnevalExprCouplLeonList = sons.zip(exprOfLeonListOfExprToLeonListOfExpr(argSons))
+                  var newId = id + 1
                   val iDedSons : leon.collection.List[WebElement]= sonsWebElemCorrespUnevalExprCouplLeonList.map(
-                    {case (webElem, correspUnevalExpr) => giveIDToWebElementsAndFillSourceMap(sourceMap, sReporter)(webElem, correspUnevalExpr)}
+                    {case (webElem, correspUnevalExpr) =>
+                      val (w, idAfterChild) = giveIDToWebElementsAndFillSourceMap(newId, webElem, correspUnevalExpr, sourceMap, sReporter)
+                      newId = idAfterChild
+                      w
+                    }
                   )
-                  WebElementWithID(Element(tag, iDedSons, properties, styles), id)
+                  (WebElementWithID(Element(tag, iDedSons, properties, styles), id), newId)
                 case e => throw new Exception("Did not pattern match Element")
               }
+          }
+        }
+        
+        /*
+          * Traverse webElement
+          * Creates a tree corresponding to webElement, but made of WebElementWithID.
+          *
+          * @param sourceMap
+          * @param webElement
+          * @param correspondingUnevaluatedExpr
+          * @return the webelement with ID along with a fresh ID number
+          */
+        def giveIDToWebElement(id: Int, webElement: WebElement, sReporter: ServerReporter) : (WebElementWithID, Int) = {
+          webElement match {
+            // Wildcard patterns are not used for most of the following cases, so that the compiler complains whenever
+            // the types of the arguments of these case classes are changed (in their definition).
+            // Because the following code may go haywire if these types are changed (especially if WebElements are added
+            // to the definitions of these case classes)
+            case WebElementWithID(_,_) =>
+              sReporter.report(Info, "#4")
+//              Should never happen
+              sReporter.report(Error,
+                s"""Something went wrong, function giveIDToWebElement was given a WebElementWithID:
+                    |   WebElementWithID: $webElement
+                  """.stripMargin)
+              (WebElementWithID(webElement, 0), id)
+            case TextElement(text: String) =>
+              (WebElementWithID(webElement, id), id+1)
+            case Element(tag: String, sons, properties, styles) =>
+              var newId = id+1
+              val iDedSons = sons.map{ webElem =>
+                  val (res, newIdAfterChild) = giveIDToWebElement(newId, webElem, sReporter)
+                  newId = newIdAfterChild
+                  (res: WebElement)
+              }
+              (WebElementWithID(Element(tag, iDedSons, properties, styles), id), newId)
           }
         }
         def scalaListToLeonList[T](input: List[T], resultUnderConstruction: leon.collection.List[T] = leon.collection.List[T]()) : leon.collection.List[T]= {
@@ -257,21 +335,30 @@ object ProgramEvaluator {
               resultUnderConstruction.reverse
           }
         }
-        val webPageWithIDedElements = WebPageWithIDedWebElements(
-          //webPage.webPageAttributes,
-          giveIDToWebElementsAndFillSourceMap(sourceMap, sReporter)(bootstrapWebElement, bootstrapExprOfUnevaluatedWebElement)
-        )
-        (webPageWithIDedElements, sourceMap)
+
+        val webPageWithIDedElements = WebPageWithIDedWebElements(giveIDToWebElement(0, bootstrapWebElement, sReporter)._1)
+        val computeSourceMap = (resultEvaluationTreeExpr: Expr) => {
+          val sourceMap = new SourceMap(sourceCode, program)
+          val bootstrapExprOfUnevaluatedWebElement : Expr = resultEvaluationTreeExpr match {
+          case CaseClass(CaseClassType(`webPageCaseClassDef`, targs_1), Seq(arg)) =>
+            arg
+          }
+          giveIDToWebElementsAndFillSourceMap(0, bootstrapWebElement, bootstrapExprOfUnevaluatedWebElement, sourceMap, sReporter)
+          sourceMap
+        }
+        
+        (webPageWithIDedElements, computeSourceMap)
       }
 
       //WebPage without the contained WebElement having proper IDs
       val webPage = unExpr(sReporter.startFunction("Unexpring WebPage Expr: "+webPageEvaluatedExpr))(webPageEvaluatedExpr).asInstanceOf[WebPage]
-      val (webPageWithIDedWebElements, sourceMap) = buildSourceMapAndGiveIDsToWebElements(webPage, webPageEvaluationTreeExpr, sourceCode, program, sReporter)
+      //webPageEvaluationTreeExpr
+      val (webPageWithIDedWebElements, sourceMapMaker) = buildSourceMapAndGiveIDsToWebElements(webPage, sourceCode, program, sReporter)
       sReporter.report(Info, "WebPageWithIDedWebElements: " + webPageWithIDedWebElements.toString)
 //      val d =  WebPageWithIDedWebElements(Nil(),Cons(WebElementWithID(Header(HeAdEr,HLTwo()),1),Cons(WebElementWithID(Paragraph(text),2),Cons(WebElementWithID(Div(Cons(Paragraph(text2),Nil())),3),Nil()))))
 
-      val programEvaluationResult = (webPageWithIDedWebElements, sourceMap)
-      Memory.sourceMap = sourceMap
+      val programEvaluationResult = (webPageWithIDedWebElements, sourceMapMaker)
+      //Memory.setSourceMap(id)(s)
       sReporter.report(Info, "Program evaluation result after unExpr: " + programEvaluationResult)
       Left(programEvaluationResult)
     }
@@ -281,9 +368,9 @@ object ProgramEvaluator {
       }
     }
     result match {
-      case Left((webPageWithIDedWebElements, sourceMap)) =>
-        sReporter.report(Info, "Conversion and SourceMap building successful")
-        Some((webPageWithIDedWebElements, sourceMap))
+      case Left((webPageWithIDedWebElements, completeSourceMapMaker)) =>
+        sReporter.report(Info, "Conversion and SourceMap programming building successful")
+        Some((webPageWithIDedWebElements, completeSourceMapMaker))
       case Right(errorString) =>
         sReporter.report(Error, "Conversion and SourceMap building failed: " + errorString)
         None

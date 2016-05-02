@@ -11,7 +11,7 @@ import stringModification.StringModificationProcessor
 /**
   * Created by dupriez on 2/12/16.
   */
-class ApiService extends Api{
+class ApiService(onUserRequest: Boolean = true) extends Api{
   override def getBootstrapSourceCode(): Either[String, ServerError] = {
     val serverReporter = new ServerReporter
     val bootstrapSourceCode = BootstrapSourceCodeGetter.getBootstrapSourceCode(serverReporter)
@@ -22,24 +22,31 @@ class ApiService extends Api{
     }
   }
 
-  override def submitSourceCode(sourceCode: String): SourceCodeSubmissionResult = {
+  override def submitSourceCode(submission: SourceCodeSubmissionNetwork): SourceCodeSubmissionResultNetwork = {
+    val requestId = submission.requestId
+    val sourceCode = submission.source
     val serverReporter = new ServerReporter
     LeonProgramMaker.makeProgram(sourceCode, serverReporter) match {
       case Some(program) =>
         ProgramEvaluator.evaluateAndConvertResult(program, sourceCode, serverReporter) match {
-          case (Some((webPageWithIDedWebElement, sourceMap)), evaluationLog) =>
-            Memory.sourceMap = sourceMap
-            return SourceCodeSubmissionResult(Some(webPageWithIDedWebElement), evaluationLog)
+          case (Some((webPageWithIDedWebElement, sourceMapProducer, ctx)), evaluationLog) =>
+            if(onUserRequest) {
+              Memory.setSourceMap(requestId, sourceMapProducer)(ctx)
+            } else {
+              Memory.setAutoSourceMap(requestId, sourceMapProducer)(ctx)
+            }
+            
+            SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPageWithIDedWebElement), evaluationLog), requestId)
           case (None, evaluationLog) =>
-            Memory.sourceMap = null
-            return SourceCodeSubmissionResult(None,
+            Memory.setSourceMap(requestId, () => None)(null)
+            SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None,
               s"""
                 |ProgramEvaluator did not manage to evaluate and unexpr the result of the leon program.
                 | Here is the evaluation log: $evaluationLog
-              """.stripMargin)
+              """.stripMargin), requestId)
         }
       case None =>
-        return SourceCodeSubmissionResult(None, "leon did not manage to create a Program out of the source code")
+        SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, "leon did not manage to create a Program out of the source code"), requestId)
     }
   }
 
@@ -50,6 +57,7 @@ class ApiService extends Api{
     val sReporter = new ServerReporter
     val stringModification = stringModificationForNetwork.stringModification
     val stringModID = stringModificationForNetwork.stringModID
+    val sourceCodeId = stringModificationForNetwork.sourceCodeId
     sReporter.report(Info,
       s"""Received a string modification from the client:
          |  webElementID: ${stringModification.webElementID}
@@ -59,12 +67,18 @@ class ApiService extends Api{
        """.stripMargin
     )
     val weID = stringModification.webElementID
-    val weExprFromSourceMap = Memory.sourceMap.webElementIDToExpr(weID)
+    val weExprFromSourceMap = Memory.getSourceMap(sourceCodeId) match {
+      case Some(sourceMap) => 
+        sourceMap.webElementIDToExpr(weID)
+      case None =>
+        throw new Exception(s"Could not find code with sourceCodeId = $sourceCodeId, maybe not up-to-date (last recorded is "+Memory.lastSourceId+")")
+    }
+    
     sReporter.report(Info,
       s"""Here's what has been found in the sourceMap for the webElementID $weID:
          |${weExprFromSourceMap}
        """.stripMargin)
 
-    StringModificationSubmissionResultForNetwork(StringModificationProcessor.process(stringModification, sReporter), stringModID)
+    StringModificationSubmissionResultForNetwork(StringModificationProcessor.process(stringModification, sourceCodeId, sReporter), sourceCodeId, stringModID)
   }
 }

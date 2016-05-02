@@ -16,8 +16,10 @@ import logging.serverReporter.{Debug, Info, ServerReporter}
 import memory.Memory
 import programEvaluator.{SourceMap, TupleSelectAndCaseClassSelectRemover}
 import services.ApiService
-import shared.{SourceCodeSubmissionResult, StringModification, StringModificationSubmissionResult}
+import shared._
 import programEvaluator.ProgramEvaluator
+import scala.collection.mutable.ListBuffer
+import leon.utils.RangePosition
 
 /**
   * Created by dupriez on 4/18/16.
@@ -86,7 +88,7 @@ object StringModificationProcessor {
     (webElem, unevalExprOfWebElem)
   }
 
-  def process(strMod: StringModification, serverReporter: ServerReporter) : StringModificationSubmissionResult = {
+  def process(strMod: StringModification, sourceId: Int, serverReporter: ServerReporter) : StringModificationSubmissionResult = {
     val sReporter = serverReporter.startProcess("String Modification Processor")
 
     val (weID, modWebAttr, newVal) = strMod match {case StringModification(w, m, n)=> (w,m,n)}
@@ -105,9 +107,10 @@ object StringModificationProcessor {
         StringModificationSubmissionResult(None, msg)
     }
 
-    val sourceMap = Memory.sourceMap
+    val sourceMap = Memory.getSourceMap(sourceId).getOrElse(failure(s"Could not find source maps for request $sourceId"))
     val (webElement, unevalExprOfWebElem) = getWebElemAndUnevalExprOfWebElemFromSourceMap(weID, sourceMap, sReporter)
     val sourceCode = sourceMap.sourceCode
+    val newSourceId = sourceId + 1 // For the source code after the modification.
     
     val cb = new ProgramEvaluator.ConversionBuilder(sourceMap, serverReporter)
     import cb._
@@ -172,21 +175,28 @@ object StringModificationProcessor {
     }
     implicit val context = LeonContext.empty
     val fileInterface = new FileInterface(context.reporter)
+    var changedElements = List[StringModificationPosition]()
     val newSourceCode = firstSol.toList
 //      Apply the modifications from the bottom to the top, to keep the line numbers consistent for the next modifications.
       .sortBy({case (identifier, str) => identifier.getPos})
       .reverse
       .foldLeft(sourceCode)(
-        {case (sCode, (identifier, string))=> fileInterface.substitute(sCode, identifier, StringLiteral(string))}
+        {case (sCode, (identifier, string))=>
+          changedElements = (identifier.getPos match {
+            case RangePosition(lineFrom, colFrom, pointFrom, lineTo, colTo, pointTo, file) => StringModificationPosition(lineFrom, colFrom, lineTo, colTo)
+            case _ => StringModificationPosition(0, 0, 0, 0)
+          }) :: changedElements
+          fileInterface.substitute(sCode, identifier, StringLiteral(string))}
       )
     sReporter.report(Info, "New source code: "+ newSourceCode)
-    val apiService = new ApiService
+    val apiService = new ApiService(onUserRequest = false)
     sReporter.report(Info, "Submitting the new source code (as if the client did it)")
-    apiService.submitSourceCode(newSourceCode) match {
-      case SourceCodeSubmissionResult(Some(webPageIDed), _) =>
+    
+    apiService.submitSourceCode(SourceCodeSubmissionNetwork(newSourceCode, newSourceId)) match {
+      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPageIDed), _), newSourceId) =>
         sReporter.report(Info, "Sending back to client the new source code and a WebPage with IDed WebElements")
-        StringModificationSubmissionResult(Some((newSourceCode, webPageIDed)), "")
-      case SourceCodeSubmissionResult(None, log) =>
+        StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, changedElements, newSourceId, webPageIDed)), "")
+      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), newSourceId) =>
         sReporter.report(Info, "The submission of the new source code failed because: "+log)
         StringModificationSubmissionResult(None, log)
     }

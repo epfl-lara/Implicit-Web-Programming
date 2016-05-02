@@ -6,11 +6,12 @@ import implicits._
 object Main {
     val title = "Implicit website builder"
   
-    def check(s: String): WebTree = <.span(<.label(<.input(^.tpe := "checkbox", ^.value := s), s), <.br)
+    val tcheck = ^.tpe := "checkbox"
+    def check(s: String): WebTree = <.span(<.label(<.input(tcheck, ^.value := s), s), <.br())
   
     val pizzaChoices = List(
-      "Margharita",
-      "Tuna",
+      "Margherita",
+      "Tina",
       "Sudjuk",
       "Ham",
       "Vegetarian"
@@ -30,12 +31,13 @@ object Main {
       "either modify the code or the view. Try it now! Edit this paragraph!", <.br(),
       "Please choose one pizza between " + makeList(pizzaChoices)
       )
-      val h = <.h2(welcome, ^.color := "red")
+      val h = <.h2(welcome, ^.color := "#5E68F7")
       val finalButton = <.input(
         ^.tpe := "button",
         ^.value := "Order that for me, "+title+" is awesome!")
+     val c = pizzaChoices.map(pizza => check(pizza))
      
-     val choices = <.div(pizzaChoices.map(pizza => check(pizza)))
+     val choices = <.div(c)
         
       val w = WebPage(<.div(h, p, choices, finalButton))
       w

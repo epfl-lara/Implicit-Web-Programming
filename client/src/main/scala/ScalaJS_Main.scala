@@ -1,32 +1,35 @@
-import java.awt.event.{ActionEvent, ActionListener}
-import javax.swing.Timer
-
-import japgolly.scalajs.react.{Callback, CallbackTo, ReactDOM, ReactElement}
-import org.scalajs.dom
-import dom.{Element, document}
-import shared._
-import leon.webDSL.webDescription._
-import leon.lang.Map._
-
-import scalatags.JsDom.all._
-import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSExport, ScalaJSDefined}
-import js.Dynamic.{literal => l}
-import org.scalajs.jquery.{JQuery, JQueryAjaxSettings, JQueryEventObject, JQueryXHR, jQuery => $}
-
-import scala.util.{Failure, Success}
-import com.scalawarrior.scalajs.ace._
-import japgolly.scalajs.react.vdom.prefix_<^._
-
 import scala.collection.mutable.ListBuffer
-
-/** Imports for using AjaxClient **/
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.language.implicitConversions
+import scala.scalajs.js
+import js.Dynamic.{ global => g, literal => l, newInstance => jsnew }
+import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation.ScalaJSDefined
+import scala.util.Failure
+import scala.util.Success
+
+import org.scalajs.dom
+import org.scalajs.dom.Element
+import org.scalajs.dom.document
+import org.scalajs.jquery.JQuery
+import org.scalajs.jquery.JQueryAjaxSettings
+import org.scalajs.jquery.JQueryEventObject
+import org.scalajs.jquery.JQueryXHR
+import org.scalajs.jquery.{ jQuery => $ }
+
+import com.scalawarrior.scalajs.ace._
+
+import autowire._
 import boopickle.Default._
 import boopickle.PicklerHelper
-import autowire._
-import scala.language.implicitConversions
+import japgolly.scalajs.react.Callback
+import japgolly.scalajs.react.ReactDOM
+import japgolly.scalajs.react.ReactElement
 import japgolly.scalajs.react.ReactNode
+import japgolly.scalajs.react.vdom.prefix_<^._
+import leon.lang.Map._
+import leon.webDSL.webDescription._
+import shared._
 /** **/
 
 
@@ -63,24 +66,33 @@ object ScalaJS_Main extends js.JSApp {
     submitButtonAction() */
   }
 
+  private var idOfLastSourceCodeModificationSent = 0
   def submitSourceCode() = {
-    println("submit source code change")
-    AjaxClient[Api].submitSourceCode(AceEditor.getEditorValue).call().onComplete {
+    idOfLastSourceCodeModificationSent += 1
+    println(s"submit source code change with requestId = $idOfLastSourceCodeModificationSent")
+    AjaxClient[Api].submitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent)).call().onComplete {
       case Failure(exception) => {println("error during submission of the source code: " + exception)}
       case Success(sourceCodeProcessingResult) => {
         println("Server sent something in response to a code submission")
         sourceCodeProcessingResult match {
-          case SourceCodeSubmissionResult(Some(webPage), log) => {
+          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
+            if(requestId == idOfLastSourceCodeModificationSent) {
             println(
               s"""
-                 |Received "Some(WebPage)"
+                 |Received "Some(WebPage)" for id = $requestId
                   """.stripMargin)
 //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
 //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
             SourceCodeSubmitButton.removeCustomBackground()
             renderWebPage(webPage, "htmlDisplayerDiv")
+            } else {
+              println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
+            }
           }
-          case SourceCodeSubmissionResult(None, log) => {
+          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) => {
+            println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
+          }
+          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) => {
             println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
           }
         }
@@ -97,13 +109,14 @@ object ScalaJS_Main extends js.JSApp {
         |NewValue: ${stringModification.newValue}
       """.stripMargin)
     idOfLastStringModificationSent += 1
-    AjaxClient[Api].submitStringModification(StringModificationForNetwork(stringModification, idOfLastStringModificationSent)).call().onComplete {
+    AjaxClient[Api].submitStringModification(StringModificationForNetwork(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent)).call().onComplete {
       case Failure(exception) => {println("error during submission of modification: " + exception)}
       case Success(stringModificationSubmissionResult) => {
         println("Server sent something in response to a string modification submission")
         stringModificationSubmissionResult match {
           case StringModificationSubmissionResultForNetwork(
-            StringModificationSubmissionResult(Some((newSourceCode, webPageWithIDedWebElements)), log),
+            StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, positions, newId, webPageWithIDedWebElements)), log),
+            sourceId,
             stringModID
           ) => {
 //            println(
@@ -114,7 +127,8 @@ object ScalaJS_Main extends js.JSApp {
               s"""
                  |Received new source code with stringModificationID of $stringModID: TEMPORARY DISABLED
                   """.stripMargin)
-            if (stringModID == idOfLastStringModificationSent) {
+            if (stringModID == idOfLastStringModificationSent && sourceId == idOfLastSourceCodeModificationSent ) {
+              idOfLastSourceCodeModificationSent = newId
               renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
               println("Accepting the stringModificationResult with id: "+stringModID)
             }
@@ -125,10 +139,13 @@ object ScalaJS_Main extends js.JSApp {
 //            because of the following call to AceEditor.setEditorValue
             AceEditor.removeAceEdOnChangeCallback()
             AceEditor.setEditorValue(newSourceCode)
+            AceEditor.addMarkings(positions)
+            
             AceEditor.activateAceEdOnChangeCallback_standard()
           }
           case StringModificationSubmissionResultForNetwork(
             StringModificationSubmissionResult(None, log),
+            sourceId,
             stringModID
           ) => {
             println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
@@ -352,6 +369,7 @@ object ScalaJS_Main extends js.JSApp {
     val aceEditorID = "aceeditor"
     //Contains the aceEditor created
     var aceEditor: Option[Editor] = None
+    lazy val aceRange = ace.require("ace/range").Range;
 
     def initialiseAndIncludeEditorInWebPage() = {
       val editor = ace.edit(aceEditorID)
@@ -417,6 +435,41 @@ object ScalaJS_Main extends js.JSApp {
           e.session.setScrollTop(line)
           //e.session.setScrollLeft(col) // Uncomment if the API works.
         case None => "[ERROR] fun setEditorValue was called while there was no aceEditor"
+      }
+    }
+    
+    var prevMarker = List[Int]()
+    
+    def addMarkings(positions: List[StringModificationPosition]) = {
+      for(marker <- prevMarker) {
+        aceEditor.foreach(_.getSession().removeMarker(marker))
+      }
+      prevMarker = for(s <- positions) yield {
+        s match {
+          case StringModificationPosition(lineFrom, colFrom, lineTo, colTo) =>
+            AceEditor.addMarking(lineFrom, colFrom, lineTo, colTo)(3000)
+        }
+      }
+      positions.headOption match {
+        case Some(p) =>
+          aceEditor.foreach(_.getSession().setScrollTop(p.lineFrom - 1))
+        case None =>
+      }
+    }
+    
+    /** Returns the ID of the added marker */
+    def addMarking(lineFrom: Int, colFrom: Int, lineTo: Int, colTo: Int)(timeoutms: Int): Int = {
+      aceEditor match {
+        case Some(editor) =>
+          println(s"Adding merking at $lineFrom, $colFrom, $lineTo, $colTo of class tmp-highlight")
+          val range = jsnew(aceRange)(lineFrom - 1, colFrom-1, lineTo - 1, colTo).asInstanceOf[Range]
+          val marker = editor.getSession().addMarker(range, "tmp-highlight", "text", false)
+          js.timers.setTimeout(timeoutms){
+              editor.getSession().removeMarker(marker)
+          }
+          marker
+        case None => println("[ERROR] fun addMarking was called while there was no aceEditor")
+          0
       }
     }
 

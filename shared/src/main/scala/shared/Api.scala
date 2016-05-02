@@ -5,7 +5,7 @@ package shared
   */
 trait Api {
   def getBootstrapSourceCode(): Either[String, ServerError]
-  def submitSourceCode(sourceCode: String): SourceCodeSubmissionResult
+  def submitSourceCode(sourceCode: SourceCodeSubmissionNetwork): SourceCodeSubmissionResultNetwork
 //  def submitHtml(don't know, something that indicate a change made to the html): String //New Source Code
   def submitStringModification(stringModificationForNetwork: StringModificationForNetwork): StringModificationSubmissionResultForNetwork
 }

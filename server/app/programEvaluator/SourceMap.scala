@@ -9,7 +9,7 @@ import logging.serverReporter._
 /**
   * Created by dupriez on 3/31/16.
   */
-class SourceMap(val sourceCode: String, val program: Program){
+class SourceMap(val sourceCode: String, program: Program) extends ProgramExtractor(program) {
   private val _webElementIDToExpr: scala.collection.mutable.Map[Int, (WebElement, Expr)] = scala.collection.mutable.Map()
   def webElementIDToExpr(webElementID: Int) : OptionValWithLog[Expr] = {
     if (_webElementIDToExpr.contains(webElementID)) {
@@ -31,39 +31,6 @@ class SourceMap(val sourceCode: String, val program: Program){
     _webElementIDToExpr(id) = (webElement, exprOfUneavaluatedWebElement)
   }
 
-  private def lookupCaseClass(program: Program, caseClassFullName: String, serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    val sReporter = serverReporter.startProcess("Source Map looks up the caseClassDef of: \"" + caseClassFullName+"\"")
-    program.lookupCaseClass(caseClassFullName) match {
-      case Some(classDef) =>
-        sReporter.report(Info, "Success")
-        OptionValWithLog(Some(classDef), "")
-      case None =>
-        sReporter.report(Error, "Look up gave no result")
-        OptionValWithLog(None, "Failed Source Map lookup for the caseClassDef of: \"" + caseClassFullName+"\"")
-    }
-  }
-
-  def element_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.webDSL.webDescription.Element", serverReporter)
-  }
-  def textElement_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.webDSL.webDescription.TextElement", serverReporter)
-  }
-  def webAttribute_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.webDSL.webDescription.WebAttribute", serverReporter)
-  }
-  def webStyle_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.webDSL.webDescription.WebStyle", serverReporter)
-  }
-  def webPage_webElementCaseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.webDSL.webDescription.WebPage", serverReporter)
-  }
-  def leonCons_caseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.collection.Cons", serverReporter)
-  }
-  def leonNil_caseClassDef(serverReporter: ServerReporter): OptionValWithLog[CaseClassDef] = {
-    lookupCaseClass(program, "leon.collection.Nil", serverReporter)
-  }
 }
 
 
