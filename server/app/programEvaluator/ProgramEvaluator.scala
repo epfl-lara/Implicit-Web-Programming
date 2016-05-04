@@ -113,7 +113,7 @@ object ProgramEvaluator {
       case EvaluationResults.Successful(resultEvaluationTreeExpr) => {
 //        Note: in resultEvaluationTreeExpr, the function calls are replaced by their return value
         sReporter.report(Info, "Abstract Evaluation successful")
-        sReporter.report(Info, "Abstract Evaluation result " + resultEvaluationTreeExpr)
+        //sReporter.report(Info, "Abstract Evaluation result " + resultEvaluationTreeExpr)
         Some(resultEvaluationTreeExpr)
       }
       case EvaluationResults.EvaluatorError(msg) => {
