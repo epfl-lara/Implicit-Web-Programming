@@ -4,7 +4,7 @@ import java.lang.reflect.Type
 import javassist.bytecode.stackmap.TypeTag
 import leon.DefaultReporter
 import leon.collection.Cons
-import leon.evaluators.{AbstractEvaluator, EvaluationResults}
+import leon.evaluators.{AbstractEvaluator, AbstractOnlyEvaluator, EvaluationResults}
 import leon.purescala.Definitions.{CaseClassDef, Program}
 import leon.purescala.Expressions._
 import leon.purescala.Types.CaseClassType
@@ -101,7 +101,7 @@ object ProgramEvaluator {
     */
   private def evaluateProgramAbstract(program: Program, serverReporter: ServerReporter)(implicit ctx: LeonContext): Option[Expr] = {
     val sReporter = serverReporter.startFunction("Evaluating Program with leon's Abstract Evaluator")
-    val abstractEvaluator = new AbstractEvaluator(ctx, program)
+    val abstractEvaluator = new AbstractOnlyEvaluator(ctx, program)
     val mainFunDef = program.lookupFunDef(fullNameOfTheFunctionToEvaluate) match {
       case Some(funDef) => funDef
       case None => {
@@ -110,9 +110,10 @@ object ProgramEvaluator {
       }
     }
     abstractEvaluator.eval(FunctionInvocation(mainFunDef.typed, List())) match {
-      case EvaluationResults.Successful((resultEvaluatedExpr, resultEvaluationTreeExpr)) => {
+      case EvaluationResults.Successful(resultEvaluationTreeExpr) => {
 //        Note: in resultEvaluationTreeExpr, the function calls are replaced by their return value
         sReporter.report(Info, "Abstract Evaluation successful")
+        sReporter.report(Info, "Abstract Evaluation result " + resultEvaluationTreeExpr)
         Some(resultEvaluationTreeExpr)
       }
       case EvaluationResults.EvaluatorError(msg) => {
