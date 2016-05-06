@@ -7,7 +7,6 @@ import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.annotation.ScalaJSDefined
 import scala.util.Failure
 import scala.util.Success
-
 import org.scalajs.dom
 import org.scalajs.dom.Element
 import org.scalajs.dom.document
@@ -16,9 +15,7 @@ import org.scalajs.jquery.JQueryAjaxSettings
 import org.scalajs.jquery.JQueryEventObject
 import org.scalajs.jquery.JQueryXHR
 import org.scalajs.jquery.{ jQuery => $ }
-
 import com.scalawarrior.scalajs.ace._
-
 import autowire._
 import boopickle.Default._
 import boopickle.PicklerHelper
@@ -30,6 +27,12 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import leon.lang.Map._
 import leon.webDSL.webDescription._
 import shared._
+import scala.scalajs.js.timers.SetTimeoutHandle
+import scalacss.ScalaCssReact._
+import scalacss.mutable.StyleSheetRegistry
+import scalacss.Defaults._
+
+
 /** **/
 
 
@@ -41,12 +44,18 @@ trait Offset extends js.Any {
 
 object ScalaJS_Main extends js.JSApp {
   import shared.Picklers._
-
+  def window = g
 //  An attribute that SHOULD NOT be used by the end user, whose purpose is to serve as id for the html elements of the web interface
   val reservedAttributeForImplicitWebProgrammingID = "data-reservedattributeforimplicitwebprogrammingid".reactAttr
   val reservedAttributeForImplicitWebProgrammingID_name = "data-reservedattributeforimplicitwebprogrammingid"
 
   def main(): Unit = {
+    val registry = new StyleSheetRegistry
+    registry.register(GlobalStyles)
+    registry.addToDocumentOnRegistration()
+    // create stylesheet
+    //GlobalStyles.addToDocument()
+    
     //    println("method main of ScalaJSExample is running")
     //    dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
     //    displaySourceCode()
@@ -56,10 +65,10 @@ object ScalaJS_Main extends js.JSApp {
     
     if(js.Dynamic.global.location.href.indexOf("admin=true").asInstanceOf[Int] == -1) {
       $("#htmlMenu").hide()
-    } else {
-      $("#SourceCodeDiv #aceeditor").css("height",
-          "calc(100% - "+$("#aceeditor").offset().asInstanceOf[Offset].top+"px)")
     }
+    
+    $(window).resize(AceEditor.resizeEditor _);
+    AceEditor.resizeEditor()
     
     /*TODO: Intention: the client would make an automatic code submission of the bootstrap code right after being loaded.
       TODO: In practice, it seems to sends an empty string as sourcecode to the server
@@ -89,12 +98,8 @@ object ScalaJS_Main extends js.JSApp {
               println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
             }
           }
-          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) => {
+          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
             println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
-          }
-          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) => {
-            println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
-          }
         }
       }
     }
@@ -209,8 +214,6 @@ object ScalaJS_Main extends js.JSApp {
   def fillSourceCodeDiv() = {
     val destinationDivId = "SourceCodeDiv"
 
-    val title = <.h1("Behind the scenes", ^.display.inline, ^.verticalAlign.middle)
-
     def submitHtmlButtonCallback = Callback{
         println("submit html change")
     }
@@ -271,36 +274,32 @@ object ScalaJS_Main extends js.JSApp {
         submitStringModificationButton
       )
     }
-    val menuHtml = <.div(
+    val htmlMenu = <.div(
       ^.id := "htmlMenu",
       stringModificationForm(),
       submitHtmlButton
     )
-
-    val submitCodeButton = SourceCodeSubmitButton.scalaJSButton
-
-    val aceEditorDiv = <.div(
-      ^.id := "aceeditor"//,
-      //^.fontSize := "12px",
-      //^.position := "absolute",
-      //^.width := "50%",
-      //^.top := 130,
-      //^.right := 0,
-      //^.bottom := 0,
-      //^.left := 0
-    )
-    
-    val minimizeButton = <.div("<< minimize",
-        ^.id := "minimizeButton"
+    import scalacss.ScalaCssReact._
+    val discussionBox = <.div(
+      ^.id := "discussionbox",
+      GlobalStyles.discussionbox,
+      <.div(
+          ^.id := "discussionCommentId",
+          "Weeeeeeeelcome behind the scenes.",
+          GlobalStyles.discussionComment,
+          GlobalStyles.triangleBorderRight
+      ),
+      Clipart.goat()
     )
 
     val divContent = <.div(
       ^.height := "100%",
-      minimizeButton,
-      title,
-      submitCodeButton,
-      menuHtml,
-      aceEditorDiv
+      <.div("<< minimize", ^.id := "minimizeButton"),
+      <.h1("Behind the scenes", ^.display.inline, ^.verticalAlign.middle),
+      SourceCodeSubmitButton.scalaJSButton,
+      htmlMenu,
+      discussionBox,
+      <.div(^.id := "aceeditor")
     )
     ReactDOM.render(divContent, document.getElementById(destinationDivId))
     $("#minimizeButton").on("click", () => {
@@ -402,6 +401,7 @@ object ScalaJS_Main extends js.JSApp {
 
 
       }
+      resizeEditor()
 
 
       //    val sourceCode = getSourceCode()
@@ -482,6 +482,14 @@ object ScalaJS_Main extends js.JSApp {
       currentOnChangeCallback = Standard_OnChangeCallback.onChangeCallback
 //      currentOnChangeCallback = Standard_OnChangeCallback
     }
+    
+    def resizeEditor(): Unit = {
+      $("#SourceCodeDiv #aceeditor").css("height",
+          "calc(100% - "+$("#aceeditor").offset().asInstanceOf[Offset].top+"px)")
+  
+      aceEditor.foreach(_.resize())
+    };
+  
 
 //    @JSExport
 //    def setSourceCodeRequestWillBeRemoved() = {
@@ -531,9 +539,16 @@ object ScalaJS_Main extends js.JSApp {
 //  (so modifications to other webElements/webAttributes done during the delay WILL NOT BE TAKEN INTO ACCOUNT)
     private val delay = 1000
     private var lastModification : StringModification = null
-    private var timeout: Option[Int] = None
-    private def stopTimeout() = {println("stop Text modification timeout"); timeout.foreach(to => dom.window.clearTimeout(to))}
-    private def launchTimeout(stringModification: StringModification) = {println("launch Text modification timeout"); timeout = Some(dom.setTimeout(()=>{lastModification=null; submitStringModification(stringModification)}, delay))}
+    private var timeout: Option[SetTimeoutHandle] = None
+    private def stopTimeout() = {println("stop Text modification timeout"); timeout.foreach(to => js.timers.clearTimeout(to))}
+    private def launchTimeout(stringModification: StringModification) = {
+      println("launch Text modification timeout")
+      timeout = Some(
+          js.timers.setTimeout(delay){
+            lastModification=null
+            submitStringModification(stringModification)
+          })
+    }
     private def buildStringModification(webElementID: Int): StringModification = {
 //      println("innerText of webElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).innerText)
       val newValue = getElementByImplicitWebProgrammingID(webElementID.toString)(0).innerText.getOrElse("getOrElseFailed in StringModificationSubmitter") /*match {*/
@@ -712,7 +727,6 @@ object ScalaJS_Main extends js.JSApp {
               reservedAttributeForImplicitWebProgrammingID := webElID,
               ^.contentEditable := "true",
               ^.onChange --> textChangeCallback,
-              ^.onInput --> textChangeCallback,
               ^.title := "webElID= "+webElID
             )
           case Element(tag, sons, attributes, styles) =>

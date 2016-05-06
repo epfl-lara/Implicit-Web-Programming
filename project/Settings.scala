@@ -7,10 +7,10 @@ import sbt._
  */
 object Settings {
   /** The name of your application */
-  val name = "scalajs-spa"
+  val name = "implicit-web-programming"
 
   /** The version of your application */
-  val version = "1.1.1"
+  val version = "1.1.2"
 
   /** Options for the scala compiler */
   val scalacOptions = Seq(
@@ -22,19 +22,20 @@ object Settings {
 
   /** Declare global dependency versions here to avoid mismatches in multi part dependencies */
   object versions {
-    val scala = "2.11.7"
-    val scalaDom = "0.8.2"
-    val scalajsReact = "0.10.2"
-    val scalaCSS = "0.3.1"
+    val scala = "2.11.8"
+    val scalaDom = "0.9.0"
+    val scalajsReact = "0.11.1"
+    val scalaCSS = "0.4.1"
+    val scalajs = "0.6.8"
     val log4js = "1.4.10"
     val autowire = "0.2.5"
-    val booPickle = "1.1.0"
-    val diode = "0.3.0"
-    val uTest = "0.3.1"
+    val booPickle = "1.1.3"
+    val diode = "0.5.1"
+    val uTest = "0.4.3"
     val scalajsjQuery = "0.8.0"
 
-    val react = "0.14.3"
-    val jQuery = "1.11.1"
+    val react = "15.0.1"
+    val jQuery = "2.1.3"
     val bootstrap = "3.3.2"
     val chartjs = "1.0.1"
 
@@ -46,7 +47,6 @@ object Settings {
    * the special %%% function selects the correct version for each project
    */
   val sharedDependencies = Def.setting(Seq(
-    "com.lihaoyi" %%% "autowire" % versions.autowire,
     "me.chrons" %%% "boopickle" % versions.booPickle,
     "com.lihaoyi" %%% "utest" % versions.uTest
   ))
@@ -57,7 +57,12 @@ object Settings {
     "org.webjars" % "font-awesome" % "4.3.0-1" % Provided,
     "org.webjars" % "bootstrap" % versions.bootstrap % Provided,
     "com.lihaoyi" %% "autowire" % versions.autowire,
-    "org.webjars" % "jquery" % "2.1.1"
+    "org.webjars" % "jquery" % "2.1.1",
+    "org.scala-js" % s"scalajs-compiler_${versions.scala}" % versions.scalajs,
+    "org.scala-js" %% "scalajs-tools" % versions.scalajs,
+    //"org.scala-lang.modules" %% "scala-async" % "0.9.1" % "provided",
+    //"com.lihaoyi" %% "scalatags" % "0.4.5",
+    "com.lihaoyi" %% "acyclic" % "0.1.2" % "provided"
   ))
 
   /** Dependencies only used by the JS project (note the use of %%% instead of %%) */
@@ -76,6 +81,7 @@ object Settings {
   val jsDependencies = Def.setting(Seq(
     "org.webjars.bower" % "react" % versions.react / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
     "org.webjars.bower" % "react" % versions.react / "react-dom.js" minified "react-dom.min.js" dependsOn "react-with-addons.js" commonJSName "ReactDOM",
+    "org.webjars.bower" % "react" % versions.react / "react-dom-server.js" minified  "react-dom-server.min.js" dependsOn "react-dom.js" commonJSName "ReactDOMServer",
     "org.webjars" % "jquery" % versions.jQuery / "jquery.js" minified "jquery.min.js",
     "org.webjars" % "bootstrap" % versions.bootstrap / "bootstrap.js" minified "bootstrap.min.js" dependsOn "jquery.js",
     "org.webjars" % "chartjs" % versions.chartjs / "Chart.js" minified "Chart.min.js",
