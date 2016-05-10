@@ -100,7 +100,6 @@ object ScalaJS_Main extends js.JSApp {
           }
           case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
             println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
-          }
         }
       }
     }
