@@ -32,7 +32,7 @@ class ServerReporter(val tabLevel: Int = 0, parent: Option[ServerReporter] = Non
 
   /**
     * To be called by the sons of this reporter to transmit their reports.
- *
+    *
     * @param srMessage
     */
   def _reportForSons(srMessage: SRMessage) : Unit = {

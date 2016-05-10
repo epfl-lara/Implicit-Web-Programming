@@ -62,7 +62,9 @@ object LeonProgramMaker {
     }
     runPipeline(pipeline, pipelineInput, ctx) match {
       case Some(program) =>
-        sReporter.report(Info, "Generated Program: "+program)
+        sReporter.report(Info, "Generated Program: "+"DISABLED (to re-enable it, look for \"#VERBOSITY\" in LeonProgramMaker.scala)")
+//        #VERBOSITY
+//        sReporter.report(Info, "Generated Program: "+program)
         Some(program)
       case _ =>
         None

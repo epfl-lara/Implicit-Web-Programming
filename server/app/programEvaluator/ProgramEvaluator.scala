@@ -167,8 +167,9 @@ object ProgramEvaluator {
   private def convertWebPageExprToClientWebPageAndSourceMap(webPageEvaluatedExpr: Expr, program: Program, sourceCode: String, serverReporter: ServerReporter): Option[(WebPageWithIDedWebElements, Expr => SourceMap)] = {
 
     val sReporter = serverReporter.startFunction("Converting the WebPage Expr into a WebPage, and building the sourceMap")
-    
-    //sReporter.report(Info, "webPage expr to be converted: "+ webPageEvaluatedExpr)
+    sReporter.report(Info, "webPage expr to be converted: "+ "DISABLED (to re-enable it, look for \"#VERBOSITY\" in ProgramEvaluator.scala)")
+//    #VERBOSITY
+//    sReporter.report(Info, "webPage expr to be converted: "+ webPageEvaluatedExpr)
 
     val result: Either[(WebPageWithIDedWebElements, Expr => SourceMap), String] = try {
       /** Looking up the case classes of webDSL_Leon**/
@@ -261,7 +262,6 @@ object ProgramEvaluator {
             // Because the following code may go haywire if these types are changed (especially if WebElements are added
             // to the definitions of these case classes)
             case WebElementWithID(_,_) =>
-              sReporter.report(Info, "#4")
 //              Should never happen
               sReporter.report(Error,
                 s"""Something went wrong, function giveIDToWebElementsAndFillSourceMap was given a WebElementWithID:
@@ -309,7 +309,6 @@ object ProgramEvaluator {
             // Because the following code may go haywire if these types are changed (especially if WebElements are added
             // to the definitions of these case classes)
             case WebElementWithID(_,_) =>
-              sReporter.report(Info, "#4")
 //              Should never happen
               sReporter.report(Error,
                 s"""Something went wrong, function giveIDToWebElement was given a WebElementWithID:
@@ -352,15 +351,21 @@ object ProgramEvaluator {
       }
 
       //WebPage without the contained WebElement having proper IDs
-      val webPage = unExpr(sReporter.startFunction("Unexpring WebPage Expr: "+webPageEvaluatedExpr))(webPageEvaluatedExpr).asInstanceOf[WebPage]
+      val ssReporter = sReporter.startFunction("Unexpring WebPage Expr: "+"DISABLED (to re-enable it, look for \"#VERBOSITY\" in ProgramEvaluator.scala)")
+//      #VERBOSITY
+//    val ssReporter = sReporter.startFunction("Unexpring WebPage Expr: "+webPageEvaluatedExpr)
+      val webPage = unExpr(ssReporter)(webPageEvaluatedExpr).asInstanceOf[WebPage]
       //webPageEvaluationTreeExpr
       val (webPageWithIDedWebElements, sourceMapMaker) = buildSourceMapAndGiveIDsToWebElements(webPage, sourceCode, program, sReporter)
-      sReporter.report(Info, "WebPageWithIDedWebElements: " + webPageWithIDedWebElements.toString)
-//      val d =  WebPageWithIDedWebElements(Nil(),Cons(WebElementWithID(Header(HeAdEr,HLTwo()),1),Cons(WebElementWithID(Paragraph(text),2),Cons(WebElementWithID(Div(Cons(Paragraph(text2),Nil())),3),Nil()))))
+
+      sReporter.report(Info, "Ids assigned to the webElements of the webPage")
+      sReporter.report(Info, "WebPageWithIDedWebElements: " + "DISABLED (to re-enable it, look for \"#VERBOSITY\" in ProgramEvaluator.scala)")
+//      #VERBOSITY
+//      sReporter.report(Info, "WebPageWithIDedWebElements: " + webPageWithIDedWebElements.toString)
 
       val programEvaluationResult = (webPageWithIDedWebElements, sourceMapMaker)
-      //Memory.setSourceMap(id)(s)
-      sReporter.report(Info, "Program evaluation result after unExpr: " + programEvaluationResult)
+//      #VERBOSITY
+//      sReporter.report(Info, "Program evaluation result after unExpr: " + programEvaluationResult)
       Left(programEvaluationResult)
     }
     catch {

@@ -78,7 +78,9 @@ object StringModificationProcessor {
 
     val unevalExprOfWebElem = sourceMap.webElementIDToExpr(weID) match {
       case OptionValWithLog(Some(value), log) =>
-        sReporter.report(Info, s"Obtained the Expr of the unevaluated webElement (id=$weID) from SourceMap: $value")
+        sReporter.report(Info, s"Obtained the Expr of the unevaluated webElement (id=$weID) from SourceMap: "+ "DISABLED (to re-enable it, look for \"#VERBOSITY\" in StringModificationProcessor.scala)")
+//        #VERBOSITY
+//        sReporter.report(Info, s"Obtained the Expr of the unevaluated webElement (id=$weID) from SourceMap: $value")
         value
       case OptionValWithLog(None, log) =>
         sReporter.report(Info, "SourceMap query for the Expr of the unevaluated webElement failed")
@@ -188,7 +190,9 @@ object StringModificationProcessor {
           }) :: changedElements
           fileInterface.substitute(sCode, identifier, StringLiteral(string))}
       )
-    sReporter.report(Info, "New source code: "+ newSourceCode)
+    sReporter.report(Info, "New source code: "+ "DISABLED (to re-enable it, look for \"#VERBOSITY\" in StringModificationProcessor.scala)")
+//    #VERBOSITY
+//    sReporter.report(Info, "New source code: "+ newSourceCode)
     val apiService = new ApiService(onUserRequest = false)
     sReporter.report(Info, "Submitting the new source code (as if the client did it)")
     
