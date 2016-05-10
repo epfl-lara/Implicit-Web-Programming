@@ -55,7 +55,7 @@ object ScalaJS_Main extends js.JSApp {
     registry.addToDocumentOnRegistration()
     // create stylesheet
     //GlobalStyles.addToDocument()
-    
+
     //    println("method main of ScalaJSExample is running")
     //    dom.document.getElementById("scalajsShoutOut").textContent = SharedMessages.itWorks
     //    displaySourceCode()
@@ -66,10 +66,10 @@ object ScalaJS_Main extends js.JSApp {
     if(js.Dynamic.global.location.href.indexOf("admin=true").asInstanceOf[Int] == -1) {
       $("#htmlMenu").hide()
     }
-    
+
     $(window).resize(AceEditor.resizeEditor _);
     AceEditor.resizeEditor()
-    
+
     /*TODO: Intention: the client would make an automatic code submission of the bootstrap code right after being loaded.
       TODO: In practice, it seems to sends an empty string as sourcecode to the server
     submitButtonAction() */
@@ -100,6 +100,7 @@ object ScalaJS_Main extends js.JSApp {
           }
           case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
             println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
+          }
         }
       }
     }
@@ -482,14 +483,14 @@ object ScalaJS_Main extends js.JSApp {
       currentOnChangeCallback = Standard_OnChangeCallback.onChangeCallback
 //      currentOnChangeCallback = Standard_OnChangeCallback
     }
-    
+
     def resizeEditor(): Unit = {
       $("#SourceCodeDiv #aceeditor").css("height",
           "calc(100% - "+$("#aceeditor").offset().asInstanceOf[Offset].top+"px)")
-  
+
       aceEditor.foreach(_.resize())
     };
-  
+
 
 //    @JSExport
 //    def setSourceCodeRequestWillBeRemoved() = {
@@ -727,6 +728,7 @@ object ScalaJS_Main extends js.JSApp {
               reservedAttributeForImplicitWebProgrammingID := webElID,
               ^.contentEditable := "true",
               ^.onChange --> textChangeCallback,
+              ^.onInput --> textChangeCallback,
               ^.title := "webElID= "+webElID
             )
           case Element(tag, sons, attributes, styles) =>

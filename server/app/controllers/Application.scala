@@ -45,11 +45,16 @@ object Application extends Controller {
 //    Ok(views.html.index(leonStringOfSourceProgram))
 //  }
 
-  def index = Action {
-//    Ok(views.html.aceeditor())
-    Ok(views.html.index(SharedMessages.itWorks))
-  }
 
+//  def index = Action {
+////    Ok(views.html.aceeditor())
+//
+//    Ok(views.html.index(SharedMessages.itWorks))
+//  }
+
+  def runMainFunction = Action{Ok(views.html.index(SharedMessages.itWorks))}
+
+  def redirectToRunMainFunction = Action{Redirect(routes.Application.ignoreArgumentAndCallIndex("main"))}
 
   //Source = https://www.playframework.com/documentation/2.4.x/ScalaJavascriptRouting
 //  def javaScriptRoutes = Action { implicit request =>
@@ -60,6 +65,6 @@ object Application extends Controller {
 //    )
 //  }
 
-
+  def ignoreArgumentAndCallIndex(unused: String) = runMainFunction
 
 }
