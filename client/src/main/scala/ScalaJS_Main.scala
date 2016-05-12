@@ -79,31 +79,101 @@ object ScalaJS_Main extends js.JSApp {
   def submitSourceCode() = {
     idOfLastSourceCodeModificationSent += 1
     println(s"submit source code change with requestId = $idOfLastSourceCodeModificationSent")
-    AjaxClient[Api].submitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent)).call().onComplete {
-      case Failure(exception) => {println("error during submission of the source code: " + exception)}
-      case Success(sourceCodeProcessingResult) => {
-        println("Server sent something in response to a code submission")
-        sourceCodeProcessingResult match {
-          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
-            if(requestId == idOfLastSourceCodeModificationSent) {
-            println(
-              s"""
-                 |Received "Some(WebPage)" for id = $requestId
+    ClientServerMessager.callServer(SubmitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent))){
+      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
+        if(requestId == idOfLastSourceCodeModificationSent) {
+          println(
+            s"""
+               |Received "Some(WebPage)" for id = $requestId
                   """.stripMargin)
-//            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
-//            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
-            SourceCodeSubmitButton.removeCustomBackground()
-            renderWebPage(webPage, "htmlDisplayerDiv")
-            } else {
-              println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
-            }
-          }
-          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
-            println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
+          //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
+          //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
+          SourceCodeSubmitButton.removeCustomBackground()
+          renderWebPage(webPage, "htmlDisplayerDiv")
+        } else {
+          println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
         }
       }
+      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
+        println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
+    }
+
+//    CallbackForServerMessages(SubmitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent))){
+//      case submitSourceCode_answer: SubmitSourceCode_answer => {
+//        println("Server sent something in response to a code submission")
+//        submitSourceCode_answer match {
+//          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
+//            if(requestId == idOfLastSourceCodeModificationSent) {
+//              println(
+//                s"""
+//                   |Received "Some(WebPage)" for id = $requestId
+//                  """.stripMargin)
+//              //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
+//              //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
+//              SourceCodeSubmitButton.removeCustomBackground()
+//              renderWebPage(webPage, "htmlDisplayerDiv")
+//            } else {
+//              println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
+//            }
+//          }
+//          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
+//            println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
+//        }
+//      }
+//    }
+
+//    AjaxClient[Api].request(SubmitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent))).call().onComplete {
+//      case Failure(exception) => {println("error during submission of the source code: " + exception)}
+//      case Success(serverAnswer) => CallbackForServerMessages.callbackForServerMessages(serverAnswer)
+//    }
+//    #Original version, before the migration to leon web client-server communication model
+//    AjaxClient[Api].submitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent)).call().onComplete {
+//      case Failure(exception) => {println("error during submission of the source code: " + exception)}
+//      case Success(sourceCodeProcessingResult) => {
+//        println("Server sent something in response to a code submission")
+//        sourceCodeProcessingResult match {
+//          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
+//            if(requestId == idOfLastSourceCodeModificationSent) {
+//            println(
+//              s"""
+//                 |Received "Some(WebPage)" for id = $requestId
+//                  """.stripMargin)
+////            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
+////            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
+//            SourceCodeSubmitButton.removeCustomBackground()
+//            renderWebPage(webPage, "htmlDisplayerDiv")
+//            } else {
+//              println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
+//            }
+//          }
+//          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
+//            println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
+//        }
+//      }
+//    }
+  }
+  def submitSourceCode_serverAnswerHandler(sourceCodeProcessingResult: SourceCodeSubmissionResultNetwork) = {
+    println("Server sent something in response to a code submission")
+    sourceCodeProcessingResult match {
+      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
+        if(requestId == idOfLastSourceCodeModificationSent) {
+          println(
+            s"""
+               |Received "Some(WebPage)" for id = $requestId
+                  """.stripMargin)
+          //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
+          //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
+          SourceCodeSubmitButton.removeCustomBackground()
+          renderWebPage(webPage, "htmlDisplayerDiv")
+        } else {
+          println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
+        }
+      }
+      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
+        println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
     }
   }
+
 
   private var idOfLastStringModificationSent = 0
   def submitStringModification(stringModification: StringModification) = {
@@ -114,9 +184,8 @@ object ScalaJS_Main extends js.JSApp {
         |NewValue: ${stringModification.newValue}
       """.stripMargin)
     idOfLastStringModificationSent += 1
-    AjaxClient[Api].submitStringModification(StringModificationForNetwork(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent)).call().onComplete {
-      case Failure(exception) => {println("error during submission of modification: " + exception)}
-      case Success(stringModificationSubmissionResult) => {
+    ClientServerMessager.callServer(SubmitStringModification(StringModificationForNetwork(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent))){
+      stringModificationSubmissionResult => {
         println("Server sent something in response to a string modification submission")
         stringModificationSubmissionResult match {
           case StringModificationSubmissionResultForNetwork(
@@ -145,7 +214,7 @@ object ScalaJS_Main extends js.JSApp {
             AceEditor.removeAceEdOnChangeCallback()
             AceEditor.setEditorValue(newSourceCode)
             AceEditor.addMarkings(positions)
-            
+
             AceEditor.activateAceEdOnChangeCallback_standard()
           }
           case StringModificationSubmissionResultForNetwork(
@@ -158,6 +227,102 @@ object ScalaJS_Main extends js.JSApp {
             println("\"" + log + "\"")
           }
         }
+      }
+    }
+
+//    AjaxClient[Api].sendToServer(SubmitStringModification(StringModificationForNetwork(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent))).call().onComplete {
+//      case Failure(exception) => {println("error during submission of modification: " + exception)}
+//      case Success(serverAnswer) => CallbackForServerMessages.callbackForServerMessages(serverAnswer)
+//    }
+
+    //    #Original version, before the migration to leon web client-server communication model
+//      AjaxClient[Api].submitStringModification(StringModificationForNetwork(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent)).call().onComplete {
+//      case Failure(exception) => {println("error during submission of modification: " + exception)}
+//      case Success(stringModificationSubmissionResult) => {
+//        println("Server sent something in response to a string modification submission")
+//        stringModificationSubmissionResult match {
+//          case StringModificationSubmissionResultForNetwork(
+//            StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, positions, newId, webPageWithIDedWebElements)), log),
+//            sourceId,
+//            stringModID
+//          ) => {
+////            println(
+////              s"""
+////                 |Received new source code with stringModificationID of $stringModID: $newSourceCode
+////                  """.stripMargin)
+//            println(
+//              s"""
+//                 |Received new source code with stringModificationID of $stringModID: TEMPORARY DISABLED
+//                  """.stripMargin)
+//            if (stringModID == idOfLastStringModificationSent && sourceId == idOfLastSourceCodeModificationSent ) {
+//              idOfLastSourceCodeModificationSent = newId
+//              renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
+//              println("Accepting the stringModificationResult with id: "+stringModID)
+//            }
+//            else {
+//              println("Rejecting outdated stringModificationResult (id= "+stringModID+", while the id of the last StringModification sent is: "+idOfLastStringModificationSent+")")
+//            }
+////            remove the standard onChange callback of the Ace Editor, so that the "submit source code change" button does not turn red
+////            because of the following call to AceEditor.setEditorValue
+//            AceEditor.removeAceEdOnChangeCallback()
+//            AceEditor.setEditorValue(newSourceCode)
+//            AceEditor.addMarkings(positions)
+//
+//            AceEditor.activateAceEdOnChangeCallback_standard()
+//          }
+//          case StringModificationSubmissionResultForNetwork(
+//            StringModificationSubmissionResult(None, log),
+//            sourceId,
+//            stringModID
+//          ) => {
+//            println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
+//            println("Received a StringModificationSubmissionResult from the server, but without sourceCode. Here is the log sent by the server:")
+//            println("\"" + log + "\"")
+//          }
+//        }
+//      }
+//    }
+  }
+  def submitStringModification_serverAnswerHandler(stringModificationSubmissionResultForNetwork: StringModificationSubmissionResultForNetwork) = {
+    println("Server sent something in response to a string modification submission")
+    stringModificationSubmissionResultForNetwork match {
+      case StringModificationSubmissionResultForNetwork(
+      StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, positions, newId, webPageWithIDedWebElements)), log),
+      sourceId,
+      stringModID
+      ) => {
+        //            println(
+        //              s"""
+        //                 |Received new source code with stringModificationID of $stringModID: $newSourceCode
+        //                  """.stripMargin)
+        println(
+          s"""
+             |Received new source code with stringModificationID of $stringModID: TEMPORARY DISABLED
+                  """.stripMargin)
+        if (stringModID == idOfLastStringModificationSent && sourceId == idOfLastSourceCodeModificationSent ) {
+          idOfLastSourceCodeModificationSent = newId
+          renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
+          println("Accepting the stringModificationResult with id: "+stringModID)
+        }
+        else {
+          println("Rejecting outdated stringModificationResult (id= "+stringModID+", while the id of the last StringModification sent is: "+idOfLastStringModificationSent+")")
+        }
+        //            remove the standard onChange callback of the Ace Editor, so that the "submit source code change" button does not turn red
+        //            because of the following call to AceEditor.setEditorValue
+        AceEditor.removeAceEdOnChangeCallback()
+        AceEditor.setEditorValue(newSourceCode)
+        AceEditor.addMarkings(positions)
+
+        AceEditor.activateAceEdOnChangeCallback_standard()
+      }
+      case StringModificationSubmissionResultForNetwork(
+      StringModificationSubmissionResult(None, log),
+      sourceId,
+      stringModID
+      ) => {
+        println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
+        println("Received a StringModificationSubmissionResult from the server, but without sourceCode. Here is the log sent by the server:")
+        println("\"" + log + "\"")
       }
     }
   }
@@ -384,23 +549,34 @@ object ScalaJS_Main extends js.JSApp {
       editor.getSession().setMode("ace/mode/scala")
       editor.getSession().setTabSize(2)
 //      updateEditorContent()
-      AjaxClient[Api].getBootstrapSourceCode().call().onComplete {
-        case Failure(exception) => {println("Unable to fetch bootstrap source code: " + exception.getMessage)}
-        case Success(serverReturn) =>
-          serverReturn match {
-            case Left(bootstrapSourceCode) =>
-              println("ajax bootstrap source code request success")
-              setEditorValue(bootstrapSourceCode)
-              editor.getSession().on("change", aceEdOnChangeCallbackVal_master)
-//              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
-              activateAceEdOnChangeCallback_standard()
-              submitSourceCode()
-            case Right(serverError) =>
-              println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
-          }
 
-
+      ClientServerMessager.callServer(GetBootstrapSourceCode()){
+        case Some(bootstrapSourceCode) =>
+          println("ajax bootstrap source code request success")
+          setEditorValue(bootstrapSourceCode)
+          editor.getSession().on("change", aceEdOnChangeCallbackVal_master)
+        //              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
+          activateAceEdOnChangeCallback_standard()
+          submitSourceCode()
+        case None =>
+          println("Error: did not received bootStrapSourceCode in response to a GetBootstrapSourceCode message sent to the server")
       }
+//      AjaxClient[Api].sendToServer(GetBootstrapSourceCode()).call().onComplete {
+//        case Failure(exception) => {println("Unable to fetch bootstrap source code: " + exception.getMessage)}
+//        case Success(serverAnswer) => CallbackForServerMessages.callbackForServerMessages(serverAnswer)
+//        #Original version, before the migration to leon web client-server communication model
+//          serverReturn match {
+//            case Left(bootstrapSourceCode) =>
+//              println("ajax bootstrap source code request success")
+//              setEditorValue(bootstrapSourceCode)
+//              editor.getSession().on("change", aceEdOnChangeCallbackVal_master)
+////              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
+//              activateAceEdOnChangeCallback_standard()
+//              submitSourceCode()
+//            case Right(serverError) =>
+//              println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
+//          }
+
       resizeEditor()
 
 
@@ -409,6 +585,20 @@ object ScalaJS_Main extends js.JSApp {
       //    println("sourceCode should have been printed (in function initialiseAndIncludeAceEditorForSourceCode of ScalaJS_Main)")
       //    editor.setValue(sourceCode)
     }
+//    def getBootstrapSourceCode_serverAnswerHandler(serverAnswer: Either[String, ServerError]) = {
+//      serverAnswer match {
+//        case Left(bootstrapSourceCode) =>
+//          println("ajax bootstrap source code request success")
+//          setEditorValue(bootstrapSourceCode)
+//          aceEditor.get.getSession().on("change", aceEdOnChangeCallbackVal_master)
+//          //              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
+//          activateAceEdOnChangeCallback_standard()
+//          submitSourceCode()
+//        case Right(serverError) =>
+//          println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
+//      }
+//    }
+
 
 //    def updateEditorContent() = {
 //      aceEditor match {
