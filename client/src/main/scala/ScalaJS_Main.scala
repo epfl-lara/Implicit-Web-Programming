@@ -221,59 +221,6 @@ object ScalaJS_Main extends js.JSApp {
         }
       }
     })
-
-//    AjaxClient[Api].sendToServer(SubmitStringModification(StringModificationForNetwork(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent))).call().onComplete {
-//      case Failure(exception) => {println("error during submission of modification: " + exception)}
-//      case Success(serverAnswer) => CallbackForServerMessages.callbackForServerMessages(serverAnswer)
-//    }
-
-    //    #Original version, before the migration to leon web client-server communication model
-//      AjaxClient[Api].submitStringModification(StringModificationForNetwork(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent)).call().onComplete {
-//      case Failure(exception) => {println("error during submission of modification: " + exception)}
-//      case Success(stringModificationSubmissionResult) => {
-//        println("Server sent something in response to a string modification submission")
-//        stringModificationSubmissionResult match {
-//          case StringModificationSubmissionResultForNetwork(
-//            StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, positions, newId, webPageWithIDedWebElements)), log),
-//            sourceId,
-//            stringModID
-//          ) => {
-////            println(
-////              s"""
-////                 |Received new source code with stringModificationID of $stringModID: $newSourceCode
-////                  """.stripMargin)
-//            println(
-//              s"""
-//                 |Received new source code with stringModificationID of $stringModID: TEMPORARY DISABLED
-//                  """.stripMargin)
-//            if (stringModID == idOfLastStringModificationSent && sourceId == idOfLastSourceCodeModificationSent ) {
-//              idOfLastSourceCodeModificationSent = newId
-//              renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
-//              println("Accepting the stringModificationResult with id: "+stringModID)
-//            }
-//            else {
-//              println("Rejecting outdated stringModificationResult (id= "+stringModID+", while the id of the last StringModification sent is: "+idOfLastStringModificationSent+")")
-//            }
-////            remove the standard onChange callback of the Ace Editor, so that the "submit source code change" button does not turn red
-////            because of the following call to AceEditor.setEditorValue
-//            AceEditor.removeAceEdOnChangeCallback()
-//            AceEditor.setEditorValue(newSourceCode)
-//            AceEditor.addMarkings(positions)
-//
-//            AceEditor.activateAceEdOnChangeCallback_standard()
-//          }
-//          case StringModificationSubmissionResultForNetwork(
-//            StringModificationSubmissionResult(None, log),
-//            sourceId,
-//            stringModID
-//          ) => {
-//            println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
-//            println("Received a StringModificationSubmissionResult from the server, but without sourceCode. Here is the log sent by the server:")
-//            println("\"" + log + "\"")
-//          }
-//        }
-//      }
-//    }
   }
   def submitStringModification_serverAnswerHandler(stringModificationSubmissionResultForNetwork: SubmitStringModificationResult) = {
     println("Server sent something in response to a string modification submission")
@@ -733,14 +680,7 @@ object ScalaJS_Main extends js.JSApp {
     }
     private def buildStringModification(webElementID: Int): StringModification = {
 //      println("innerText of webElem with ID 7: "+getElementByImplicitWebProgrammingID("7")(0).innerText)
-      val newValue = getElementByImplicitWebProgrammingID(webElementID.toString)(0).innerText.getOrElse("getOrElseFailed in StringModificationSubmitter") /*match {*/
-//  case Some(string) => string
-//  case None =>
-//    print("ERROR: StringModificationSubmitter was unable to get the innerText of the webElement of impliciWebProgrammingID: "+webElementID)
-//    throw new RuntimeException("ERROR: StringModificationSubmitter was unable to get the innerText of the webElement of impliciWebProgrammingID: "+webElementID)
-//}
-      //      val newValue = getElementByImplicitWebProgrammingID(webElementID.toString).text()
-
+      val newValue = getElementByImplicitWebProgrammingID(webElementID.toString)(0).innerText.getOrElse("getOrElseFailed in StringModificationSubmitter")
       StringModification(webElementID, None, newValue)
     }
     def newStringModificationOfTheTextWebAttr(webElementID: Int) = {
@@ -815,94 +755,6 @@ object ScalaJS_Main extends js.JSApp {
     webElWithID match {
       case WebElementWithID(webElem, webElID) =>
         webElem match {
-    //      case Header(level, stringAttributes) =>
-    //        val text : String = stringAttributes.get(Text) match {
-    //          case leon.lang.Some(string) => string
-    //          case leon.lang.None() => ""
-    //        }
-    //        level match {
-    //          case HLOne() => <.h1(text)
-    //          case HLTwo() => <.h2(text)
-    //          case HLThree() => <.h3(text)
-    //          case HLFour() => <.h4(text)
-    //          case HLFive() => <.h5(text)
-    //          case HLSix() => <.h6(text)
-    //        }
-    //      case Paragraph(stringAttributes) =>
-    //        val text : String = stringAttributes.get(Text) match {
-    //          case leon.lang.Some(string) => string
-    //          case leon.lang.None() => ""
-    //        }
-    //        <.p(text)
-//<<<<<<< HEAD
-//          case Input(/*webElID,*/tpe, placeHolder, text) =>
-//            <.input(^.tpe := tpe, ^.placeholder := placeHolder, ^.value := text)
-//          case Header(/*webElID,*/ text, level) =>
-//            val textChangeCallback = generateTextChangeCallback(webElID)
-//            level match {
-//              case HLOne() =>
-//                <.h1(
-//                  text,
-//                  reservedAttributeForImplicitWebProgrammingID := webElID,
-//                  ^.title := "webElID= "+webElID,
-//                  ^.contentEditable := "true",
-//                  ^.onChange --> textChangeCallback,
-//                  ^.onInput --> textChangeCallback
-//                )
-//              case HLTwo() =>
-//                <.h2(
-//                  text,
-//                  reservedAttributeForImplicitWebProgrammingID := webElID,
-//                  ^.title := "webElID= "+webElID,
-//                  ^.contentEditable := "true",
-//                  ^.onChange --> textChangeCallback,
-//                  ^.onInput --> textChangeCallback
-//                )
-//              case HLThree() =>
-//                <.h3(
-//                  text,
-//                  reservedAttributeForImplicitWebProgrammingID := webElID,
-//                  ^.title := "webElID= "+webElID,
-//                                    ^.contentEditable := "true",
-//                  ^.onChange --> textChangeCallback,
-//                  ^.onInput --> textChangeCallback
-//                )
-//              case HLFour() =>
-//                <.h4(
-//                  text,
-//                  reservedAttributeForImplicitWebProgrammingID := webElID,
-//                  ^.title := "webElID= "+webElID,
-//                                    ^.contentEditable := "true",
-//                  ^.onChange --> textChangeCallback,
-//                  ^.onInput --> textChangeCallback
-//                )
-//              case HLFive() =>
-//                <.h5(
-//                  text,
-//                  reservedAttributeForImplicitWebProgrammingID := webElID,
-//                  ^.title := "webElID= "+webElID,
-//                                    ^.contentEditable := "true",
-//                  ^.onChange --> textChangeCallback,
-//                  ^.onInput --> textChangeCallback
-//                )
-//              case HLSix() =>
-//                <.h6(
-//                  text,
-//                  reservedAttributeForImplicitWebProgrammingID := webElID,
-//                  ^.title := "webElID= "+webElID,
-//                                    ^.contentEditable := "true",
-//                  ^.onChange --> textChangeCallback,
-//                  ^.onInput --> textChangeCallback
-//                )
-//            }
-//          case Paragraph(/*webElID,*/ text) =>
-//            val textChangeCallback = generateTextChangeCallback(webElID)
-//            val p = <.p(
-//              text,
-//              reservedAttributeForImplicitWebProgrammingID := webElID,
-//              ^.contentEditable := "true",
-//              ^.onChange --> textChangeCallback,
-//              ^.onInput --> textChangeCallback,
           case TextElement(text) =>
             val textChangeCallback = generateTextChangeCallback(webElID)
             <.span(splitTextIntoReactNodeSeq(text),
@@ -913,7 +765,6 @@ object ScalaJS_Main extends js.JSApp {
               ^.title := "webElID= "+webElID
             )
           case Element(tag, sons, attributes, styles) =>
-//            print("I'm a div being processed by convertWebElementWithIDToReactElement. I'm about to apply convertWebElementWithIDToReactElement on each element of the list: " + sons)
             tag.reactTag(
               reservedAttributeForImplicitWebProgrammingID := webElID,
               leonListToList(sons).map(convertWebElementWithIDToReactElement),

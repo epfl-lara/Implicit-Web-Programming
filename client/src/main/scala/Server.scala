@@ -158,16 +158,5 @@ object Server {
         receive(serverMessage)
     }
   }
-  /*
-  def callServer[ServerAnswerType <: MessageFromServer](functionCall: MessageToServerExpecting[ServerAnswerType])(callback: ServerAnswerType => Unit) = {
-    Server ! (functionCall, { case res: ServerAnswerType => callback(res) })
-    
-    
-//    When you expect an answer
-    //val id = IDGenerator.genID()
-    //val messageWithID = ClientToServerMessages_withID(id, functionCall)
-    
-    
-  }*/
 
 }
