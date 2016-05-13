@@ -15,7 +15,3 @@ case class StringModificationSubmissionConcResult(
 case class StringModificationSubmissionResult(
     newSourceCodeAndWebPage: Option[StringModificationSubmissionConcResult],
     log: String)
-
-case class StringModificationSubmissionResultForNetwork(
-    stringModificationSubmissionResult: StringModificationSubmissionResult,
-    sourceId: Int, stringModSubResID: Int)

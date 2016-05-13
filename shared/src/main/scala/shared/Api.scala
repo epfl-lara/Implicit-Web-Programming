@@ -8,5 +8,5 @@ trait Api {
 //  def submitSourceCode(sourceCode: SourceCodeSubmissionNetwork): SourceCodeSubmissionResultNetwork
 //  def submitStringModification(stringModificationForNetwork: StringModificationForNetwork): StringModificationSubmissionResultForNetwork
 
-  def sendToServer(message: ClientToServerMessages_withID): ServerToClientMessage_withID
+  def sendToServer(message: MessageToServer): MessageFromServer
 }

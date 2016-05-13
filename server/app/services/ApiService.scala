@@ -12,28 +12,22 @@ import stringModification.StringModificationProcessor
   * Created by dupriez on 2/12/16.
   */
 class ApiService(onUserRequest: Boolean = true) extends Api {
-  override def sendToServer(clientToServerMessages_withID: ClientToServerMessages_withID) = {
-    val messageID = clientToServerMessages_withID.id
-    clientToServerMessages_withID.clientToServerMessage match {
-      case s@GetBootstrapSourceCode() =>
-        val answer = processGetBootstrapSourceCode(s)
-        ServerToClientMessage_withID(messageID, GetBootstrapSourceCode_answer(answer))
-      case s@SubmitSourceCode(sourceCodeSubmissionNetwork) =>
-        val answer = processSubmitSourceCode(s)
-        ServerToClientMessage_withID(messageID, SubmitSourceCode_answer(answer))
-      case s@SubmitStringModification(stringModificationForNetwork) =>
-        val answer = processStringModificationSubmission(s)
-        ServerToClientMessage_withID(messageID, SubmitStringModification_answer(answer))
+  override def sendToServer(clientToServerMessage: MessageToServer): MessageFromServer = {
+    //ServerToClientMessage_withID(messageID, _)
+    clientToServerMessage match {
+      case s: GetBootstrapSourceCode => processGetBootstrapSourceCode(s)
+      case s: SubmitSourceCode => processSubmitSourceCode(s)
+      case s: SubmitStringModification => processStringModificationSubmission(s)
     }
   }
 
-  def processGetBootstrapSourceCode(getBootstrapSourceCode: GetBootstrapSourceCode): Option[String] = {
+  def processGetBootstrapSourceCode(getBootstrapSourceCode: GetBootstrapSourceCode): MessageFromServer = {
     val serverReporter = new ServerReporter
-    BootstrapSourceCodeGetter.getBootstrapSourceCode(serverReporter)
+    val src = BootstrapSourceCodeGetter.getBootstrapSourceCode(serverReporter)
+    GetBootstrapSourceCode_answer(src)
   }
 
-  def processSubmitSourceCode(submitSourceCode: SubmitSourceCode): SourceCodeSubmissionResultNetwork = {
-    val submission = submitSourceCode.sourceCode
+  def processSubmitSourceCode(submission: SubmitSourceCode): SubmitSourceCodeResult = {
     val requestId = submission.requestId
     val sourceCode = submission.source
     val serverReporter = new ServerReporter
@@ -47,22 +41,21 @@ class ApiService(onUserRequest: Boolean = true) extends Api {
               Memory.setAutoSourceMap(requestId, sourceMapProducer)(ctx)
             }
 
-            SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPageWithIDedWebElement), evaluationLog), requestId)
+            SubmitSourceCodeResult(SourceCodeSubmissionResult(Some(webPageWithIDedWebElement), evaluationLog), requestId)
           case (None, evaluationLog) =>
             Memory.setSourceMap(requestId, () => None)(null)
-            SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None,
+            SubmitSourceCodeResult(SourceCodeSubmissionResult(None,
               s"""
                  |ProgramEvaluator did not manage to evaluate and unexpr the result of the leon program.
                  | Here is the evaluation log: $evaluationLog
               """.stripMargin), requestId)
         }
       case None =>
-        SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, "leon did not manage to create a Program out of the source code"), requestId)
+        SubmitSourceCodeResult(SourceCodeSubmissionResult(None, "leon did not manage to create a Program out of the source code"), requestId)
     }
   }
 
-  def processStringModificationSubmission(submitStringModification: SubmitStringModification): StringModificationSubmissionResultForNetwork = {
-    val submission = submitStringModification.stringModificationForNetwork
+  def processStringModificationSubmission(submission: SubmitStringModification): SubmitStringModificationResult = {
     val sReporter = new ServerReporter
     val stringModification = submission.stringModification
     val stringModID = submission.stringModID
@@ -88,7 +81,7 @@ class ApiService(onUserRequest: Boolean = true) extends Api {
           |${weExprFromSourceMap}
            """.stripMargin)
 
-    StringModificationSubmissionResultForNetwork(StringModificationProcessor.process(stringModification, sourceCodeId, sReporter), sourceCodeId, stringModID)
+    SubmitStringModificationResult(StringModificationProcessor.process(stringModification, sourceCodeId, sReporter), sourceCodeId, stringModID)
   }
 }
 

@@ -1,8 +1,11 @@
-import shared.{SourceCodeSubmissionNetwork, SubmitSourceCode, _}
+import shared._
 import scala.concurrent.ExecutionContext.Implicits.global
 import autowire._
 import boopickle.Default._
 import scala.util.{Failure, Success}
+import scala.collection.mutable.ListBuffer
+
+import scala.language.existentials
 
 /**
   * Created by dupriez on 5/11/16.
@@ -114,81 +117,57 @@ import scala.util.{Failure, Success}
 //  }
 //}
 
-object ClientServerMessager {
-  object IDGenerator {
+object Server {
+  /*object IDGenerator {
     private var id : Long = 0
     def genID() = {
       id+=1
       id
     }
+  }*/
+
+  val callbacks = ListBuffer[PartialFunction[U forSome {type U <: MessageFromServer }, Unit]]()
+  
+  private def receive(data: MessageFromServer): Unit = {
+    callbacks.find(c => c.isDefinedAt(data)) match {
+      case Some(callback) =>
+        callbacks -= callback
+        callback(data)
+        return
+      case None =>
+    }
   }
-
-  private val callbackMap = scala.collection.mutable.Map[Long, CallbackForClientToServerMessage_Abstract]()
-
-  def callServer[ServerAnswerType](functionCall: FunctionCall[ServerAnswerType])(callback: ServerAnswerType => Unit) = {
+  
+  import boopickle.Default._
+  
+  import MessageToServer._
+  import MessageFromServer._
+  
+  def ![T <: MessageFromServer](msg: MessageToServerExpecting[T], callback: PartialFunction[T forSome { type T <: MessageFromServer }, Unit]): Unit = {
+    callbacks += callback
+    val msgToSend: MessageToServer = msg
+    AjaxClient[Api].sendToServer(msgToSend).call().onComplete {
+      case Failure(exception) => {
+        println(
+          s"""No answer from server to :$msg
+              |Exception: $exception""".stripMargin)
+        //    remove the callback for the id in the HasMapping of the type of clientToServerMessage
+        callbacks -= callback
+      }
+      case Success(serverMessage) =>
+        receive(serverMessage)
+    }
+  }
+  /*
+  def callServer[ServerAnswerType <: MessageFromServer](functionCall: MessageToServerExpecting[ServerAnswerType])(callback: ServerAnswerType => Unit) = {
+    Server ! (functionCall, { case res: ServerAnswerType => callback(res) })
+    
+    
 //    When you expect an answer
-    val id = IDGenerator.genID()
-    val messageWithID = ClientToServerMessages_withID(id, functionCall)
-    val callbackForStorage = CallbackForClientToServerMessage(callback)
-    callbackMap += id -> callbackForStorage
-    AjaxClient[Api].sendToServer(messageWithID).call().onComplete {
-      case Failure(exception) => {
-        println(
-          s"""No answer from server to :$functionCall
-              |Exception: $exception""".stripMargin)
-        //    remove the callback for the id in the HasMapping of the type of clientToServerMessage
-        callbackMap -= id
-      }
-      case Success(serverMessage) =>
-        this.receiveFromServer(serverMessage)
-    }
-  }
-
-  def messageServer(clientToServerMessage: ClientToServerMessage) = {
-//    When you don't expect an answer
-    val id = IDGenerator.genID()
-    val messageWithID = ClientToServerMessages_withID(id, clientToServerMessage)
-    AjaxClient[Api].sendToServer(messageWithID).call().onComplete {
-      case Failure(exception) => {
-        println(
-          s"""No answer from server to :$clientToServerMessage
-              |Exception: $exception""".stripMargin)
-        //    remove the callback for the id in the HasMapping of the type of clientToServerMessage
-      }
-      case Success(serverMessage) =>
-        this.receiveFromServer(serverMessage)
-    }
-  }
-
-
-//  def sendToServer[ServerAnswerType](clientToServerMessage: ClientToServerMessage[ServerAnswerType])(callback: ServerAnswerType => Unit = ()) = {
-//    val id = IDGenerator.genID()
-//    val clientToServerMessage_withID = ClientToServerMessages_withID(id, clientToServerMessage)
-//    val callbackForStorage = CallbackForClientToServerMessage[ServerAnswerType](callback)
-//    callbackMap += id -> callbackForStorage
-//    AjaxClient[Api].sendToServer(clientToServerMessage_withID).call().onComplete {
-//      case Failure(exception) => {
-//        println(
-//          s"""No answer from server to :$clientToServerMessage
-//              |Exception: $exception""".stripMargin)
-//        //    remove the callback for the id in the HasMapping of the type of clientToServerMessage
-//        callbackMap -= id
-//      }
-//      case Success(serverMessage) =>
-//        this.receiveFromServer(serverMessage)
-//    }
-//  }
-
-  private def receiveFromServer(wrappedMessage: ServerToClientMessage_withID) = {
-    wrappedMessage match {
-      case ServerToClientMessage_withID(id, answer) =>
-        answer match {
-          case fr: FunctionReturn =>
-            val callback = callbackMap(id)
-            callback.applyCallback(fr.returnValue)
-            callbackMap -= id
-        }
-    }
-  }
+    //val id = IDGenerator.genID()
+    //val messageWithID = ClientToServerMessages_withID(id, functionCall)
+    
+    
+  }*/
 
 }

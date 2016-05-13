@@ -79,8 +79,8 @@ object ScalaJS_Main extends js.JSApp {
   def submitSourceCode() = {
     idOfLastSourceCodeModificationSent += 1
     println(s"submit source code change with requestId = $idOfLastSourceCodeModificationSent")
-    ClientServerMessager.callServer(SubmitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent))){
-      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
+    Server ! (SubmitSourceCode(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent), {
+      case SubmitSourceCodeResult(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
         if(requestId == idOfLastSourceCodeModificationSent) {
           println(
             s"""
@@ -94,9 +94,9 @@ object ScalaJS_Main extends js.JSApp {
           println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
         }
       }
-      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
+      case SubmitSourceCodeResult(SourceCodeSubmissionResult(None, log), _) =>
         println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
-    }
+    })
 
 //    CallbackForServerMessages(SubmitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent))){
 //      case submitSourceCode_answer: SubmitSourceCode_answer => {
@@ -152,10 +152,10 @@ object ScalaJS_Main extends js.JSApp {
 //      }
 //    }
   }
-  def submitSourceCode_serverAnswerHandler(sourceCodeProcessingResult: SourceCodeSubmissionResultNetwork) = {
+  def submitSourceCode_serverAnswerHandler(sourceCodeProcessingResult: SubmitSourceCodeResult) = {
     println("Server sent something in response to a code submission")
     sourceCodeProcessingResult match {
-      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
+      case SubmitSourceCodeResult(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
         if(requestId == idOfLastSourceCodeModificationSent) {
           println(
             s"""
@@ -169,7 +169,7 @@ object ScalaJS_Main extends js.JSApp {
           println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
         }
       }
-      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
+      case SubmitSourceCodeResult(SourceCodeSubmissionResult(None, log), _) =>
         println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
     }
   }
@@ -184,15 +184,11 @@ object ScalaJS_Main extends js.JSApp {
         |NewValue: ${stringModification.newValue}
       """.stripMargin)
     idOfLastStringModificationSent += 1
-    ClientServerMessager.callServer(SubmitStringModification(StringModificationForNetwork(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent))){
-      stringModificationSubmissionResult => {
+    Server ! (SubmitStringModification(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent), {
+      case SubmitStringModificationResult(stringModificationSubmissionResult, sourceId, stringModID) => {
         println("Server sent something in response to a string modification submission")
         stringModificationSubmissionResult match {
-          case StringModificationSubmissionResultForNetwork(
-            StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, positions, newId, webPageWithIDedWebElements)), log),
-            sourceId,
-            stringModID
-          ) => {
+          case StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, positions, newId, webPageWithIDedWebElements)), log) => {
 //            println(
 //              s"""
 //                 |Received new source code with stringModificationID of $stringModID: $newSourceCode
@@ -217,18 +213,14 @@ object ScalaJS_Main extends js.JSApp {
 
             AceEditor.activateAceEdOnChangeCallback_standard()
           }
-          case StringModificationSubmissionResultForNetwork(
-            StringModificationSubmissionResult(None, log),
-            sourceId,
-            stringModID
-          ) => {
+          case StringModificationSubmissionResult(None, log) => {
             println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
             println("Received a StringModificationSubmissionResult from the server, but without sourceCode. Here is the log sent by the server:")
             println("\"" + log + "\"")
           }
         }
       }
-    }
+    })
 
 //    AjaxClient[Api].sendToServer(SubmitStringModification(StringModificationForNetwork(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent))).call().onComplete {
 //      case Failure(exception) => {println("error during submission of modification: " + exception)}
@@ -283,10 +275,10 @@ object ScalaJS_Main extends js.JSApp {
 //      }
 //    }
   }
-  def submitStringModification_serverAnswerHandler(stringModificationSubmissionResultForNetwork: StringModificationSubmissionResultForNetwork) = {
+  def submitStringModification_serverAnswerHandler(stringModificationSubmissionResultForNetwork: SubmitStringModificationResult) = {
     println("Server sent something in response to a string modification submission")
     stringModificationSubmissionResultForNetwork match {
-      case StringModificationSubmissionResultForNetwork(
+      case SubmitStringModificationResult(
       StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, positions, newId, webPageWithIDedWebElements)), log),
       sourceId,
       stringModID
@@ -315,7 +307,7 @@ object ScalaJS_Main extends js.JSApp {
 
         AceEditor.activateAceEdOnChangeCallback_standard()
       }
-      case StringModificationSubmissionResultForNetwork(
+      case SubmitStringModificationResult(
       StringModificationSubmissionResult(None, log),
       sourceId,
       stringModID
@@ -550,17 +542,17 @@ object ScalaJS_Main extends js.JSApp {
       editor.getSession().setTabSize(2)
 //      updateEditorContent()
 
-      ClientServerMessager.callServer(GetBootstrapSourceCode()){
-        case Some(bootstrapSourceCode) =>
+      Server ! (GetBootstrapSourceCode(), {
+        case GetBootstrapSourceCode_answer(Some(bootstrapSourceCode)) =>
           println("ajax bootstrap source code request success")
           setEditorValue(bootstrapSourceCode)
           editor.getSession().on("change", aceEdOnChangeCallbackVal_master)
         //              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
           activateAceEdOnChangeCallback_standard()
           submitSourceCode()
-        case None =>
+        case GetBootstrapSourceCode_answer(None) =>
           println("Error: did not received bootStrapSourceCode in response to a GetBootstrapSourceCode message sent to the server")
-      }
+      })
 //      AjaxClient[Api].sendToServer(GetBootstrapSourceCode()).call().onComplete {
 //        case Failure(exception) => {println("Unable to fetch bootstrap source code: " + exception.getMessage)}
 //        case Success(serverAnswer) => CallbackForServerMessages.callbackForServerMessages(serverAnswer)

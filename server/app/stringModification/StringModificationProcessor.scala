@@ -196,11 +196,11 @@ object StringModificationProcessor {
     val apiService = new ApiService(onUserRequest = false)
     sReporter.report(Info, "Submitting the new source code (as if the client did it)")
     
-    apiService.processSubmitSourceCode(SubmitSourceCode(SourceCodeSubmissionNetwork(newSourceCode, newSourceId))) match {
-      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPageIDed), _), newSourceId) =>
+    apiService.processSubmitSourceCode(SubmitSourceCode(newSourceCode, newSourceId)) match {
+      case SubmitSourceCodeResult(SourceCodeSubmissionResult(Some(webPageIDed), _), newSourceId) =>
         sReporter.report(Info, "Sending back to client the new source code and a WebPage with IDed WebElements")
         StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, changedElements, newSourceId, webPageIDed)), "")
-      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), newSourceId) =>
+      case SubmitSourceCodeResult(SourceCodeSubmissionResult(None, log), newSourceId) =>
         sReporter.report(Info, "The submission of the new source code failed because: "+log)
         StringModificationSubmissionResult(None, log)
     }
