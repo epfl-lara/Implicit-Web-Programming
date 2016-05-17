@@ -18,6 +18,10 @@ class ServerReporter(val tabLevel: Int = 0, parent: Option[ServerReporter] = Non
     new ServerReporter(this.tabLevel + 1, Some(this), this.processName, this.functionName)
   }
 
+  def addTab: ServerReporter = {
+    new ServerReporter(this.tabLevel + 1, Some(this), "", "")
+  }
+
   def report(severity: SRSeverity, rawMessage: String): Unit = {
 
     val srMessage = SRMessage(rawMessage, severity, tabLevel, processName, functionName)

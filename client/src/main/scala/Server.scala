@@ -143,20 +143,34 @@ object Server {
   import MessageToServer._
   import MessageFromServer._
   
-  def ![T <: MessageFromServer](msg: MessageToServerExpecting[T], callback: PartialFunction[T forSome { type T <: MessageFromServer }, Unit]): Unit = {
-    callbacks += callback
+  def ![T <: MessageFromServer](msg: MessageToServerExpecting[T], callback: PartialFunction[T, Unit]): Unit = {
+    val storedCallback = callback.asInstanceOf[PartialFunction[U forSome {type U <: MessageFromServer}, Unit]]
+    callbacks += storedCallback
     val msgToSend: MessageToServer = msg
     AjaxClient[Api].sendToServer(msgToSend).call().onComplete {
       case Failure(exception) => {
         println(
           s"""No answer from server to :$msg
               |Exception: $exception""".stripMargin)
-        //    remove the callback for the id in the HasMapping of the type of clientToServerMessage
-        callbacks -= callback
+        callbacks -= storedCallback
       }
       case Success(serverMessage) =>
         receive(serverMessage)
     }
   }
+//  def ![T <: MessageFromServer](msg: MessageToServerExpecting[T], callback: PartialFunction[T forSome { type T <: MessageFromServer }, Unit]): Unit = {
+//    callbacks += callback
+//    val msgToSend: MessageToServer = msg
+//    AjaxClient[Api].sendToServer(msgToSend).call().onComplete {
+//      case Failure(exception) => {
+//        println(
+//          s"""No answer from server to :$msg
+//              |Exception: $exception""".stripMargin)
+//        callbacks -= callback
+//      }
+//      case Success(serverMessage) =>
+//        receive(serverMessage)
+//    }
+//  }
 
 }

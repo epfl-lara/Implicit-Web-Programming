@@ -170,7 +170,10 @@ object StringModificationProcessor {
     sReporter.report(Info, "StringSolver problem: "+StringSolver.renderProblem(problem))
 //    val solutionStream: Stream[Assignment] = StringSolver.solve(problem)
     val solutions = solveMinChange(problem, assignmentMap)
-    sReporter.report(Info, "First 5 StringSolver solutions: "+solutions.take(5).foldLeft("")((str, assignment)=>str+assignment.toString()))
+    sReporter.report(Info, "First 15 StringSolver solutions:")
+    val ssReporter = sReporter.addTab
+    solutions.take(15).foreach(assignment => ssReporter.report(Info, assignment.toString))
+//    solutions.take(15).foldLeft("")((str, assignment)=>str+assignment.toString()).foreach(solution => ssReporter.report(Info, ))
     val firstSol = solutions.headOption match{
       case Some(value) => value
       case None => failure("StringSolver returned no solutions")

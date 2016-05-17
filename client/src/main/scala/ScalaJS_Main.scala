@@ -79,7 +79,7 @@ object ScalaJS_Main extends js.JSApp {
   def submitSourceCode() = {
     idOfLastSourceCodeModificationSent += 1
     println(s"submit source code change with requestId = $idOfLastSourceCodeModificationSent")
-    Server ! (SubmitSourceCode(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent), {
+    Server ![SubmitSourceCodeResult] (SubmitSourceCode(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent), {
       case SubmitSourceCodeResult(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
         if(requestId == idOfLastSourceCodeModificationSent) {
           println(
@@ -184,7 +184,7 @@ object ScalaJS_Main extends js.JSApp {
         |NewValue: ${stringModification.newValue}
       """.stripMargin)
     idOfLastStringModificationSent += 1
-    Server ! (SubmitStringModification(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent), {
+    Server ![SubmitStringModificationResult] (SubmitStringModification(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent), {
       case SubmitStringModificationResult(stringModificationSubmissionResult, sourceId, stringModID) => {
         println("Server sent something in response to a string modification submission")
         stringModificationSubmissionResult match {
@@ -489,7 +489,7 @@ object ScalaJS_Main extends js.JSApp {
       editor.getSession().setTabSize(2)
 //      updateEditorContent()
 
-      Server ! (GetBootstrapSourceCode(), {
+      Server ![GetBootstrapSourceCode_answer] (GetBootstrapSourceCode(), {
         case GetBootstrapSourceCode_answer(Some(bootstrapSourceCode)) =>
           println("ajax bootstrap source code request success")
           setEditorValue(bootstrapSourceCode)
