@@ -1,16 +1,16 @@
 package stringModification
 
 import leon.LeonContext
-import leon.purescala.Common
+import leon.purescala.{Common, ExprOps}
 import leon.purescala.Common._
-import leon.purescala.Definitions.CaseClassDef
+import leon.purescala.Definitions.{CaseClassDef, Program}
 import leon.purescala.Expressions.{AsInstanceOf, CaseClass, CaseClassSelector, Expr, StringConcat, StringLiteral, Tuple, TupleSelect}
 import leon.purescala.Types.CaseClassType
 import leon.solvers.string.StringSolver
 import leon.solvers.string.StringSolver._
 import leon.synthesis.FileInterface
 import leon.utils.Position
-import leon.webDSL.webDescription.{TextElement, Element, WebElement, WebAttribute}
+import leon.webDSL.webDescription.{Element, TextElement, WebAttribute, WebElement}
 import logging.OptionValWithLog
 import logging.serverReporter.{Debug, Info, ServerReporter}
 import memory.Memory
@@ -18,6 +18,7 @@ import programEvaluator.{SourceMap, TupleSelectAndCaseClassSelectRemover}
 import services.ApiService
 import shared._
 import programEvaluator.ProgramEvaluator
+
 import scala.collection.mutable.ListBuffer
 import leon.utils.RangePosition
 
@@ -145,8 +146,13 @@ object StringModificationProcessor {
       actualTextExpr match {
         case StringLiteral(string) =>
           actualTextExpr.getPos.file.getName match { // Is there a better way to check if the constant comes from the library?
-            case "WebBuilder.scala" => (List(Left(string)), assignmentMap, posToId)
+            case "WebBuilder.scala" =>
+              //This StringLiteral comes from the code of WebBuilder.scala and not from the user's source code,
+              // so it is not to be modified by a user StringModification and should therefore be seen as a constant String by StringSolver
+              (List(Left(string)), assignmentMap, posToId)
             case _ =>
+              //  This StringLiteral comes from the user's source code, so it can be modified by a user StringModification.
+              // We generate an identifier for it so that StringSolver is able to assign a new value to this StringLiteral.
               if(actualTextExpr.getPos.line == -1) throw new Exception("Line is -1 on " + actualTextExpr)
               val identifier = posToId.getOrElse(actualTextExpr.getPos, Common.FreshIdentifier("l:"+actualTextExpr.getPos.line+",c:"+actualTextExpr.getPos.col).copiedFrom(actualTextExpr))
               println("Creating identifier " +identifier + " -> file " + actualTextExpr.getPos.file.getName + " \"" + string + "\"")
@@ -178,21 +184,72 @@ object StringModificationProcessor {
       case Some(value) => value
       case None => failure("StringSolver returned no solutions")
     }
+    /** Pour chaque solution, on duplique le programme original, en effectuant le remplacement prescris par la solution
+      * Pour chaque solution, on duplique le programme original, en effectuant le remplacement prescris par la solution
+      * On execute ces programmes  pour obtenir un Stream de webpage: SW
+      * On envoie la premiere WebPage au client pour qu'il l'affiche dans le viewer (et qu'il la stocke)
+      * On prend la deuxieme webPage, on la compare a la premiere -> ChangeList (List[TextNode de la premiere WebPage, TextNode correspondant de la deuxieme WebPage]) : CL
+      * On envoie au client la deuxieme webPage et CL
+      * Le client cree un menu deroulant dans Disambiguator, en ajoutant un item pour la deuxieme webPage
+      * On la troisieme webpage, on la compare
+      *
+      *
+      */
+//    import leon.purescala.DefOps
+//    val p : Program = _
+////    Do not replace top-level vals
+//    val newP = DefOps.replaceFunDefs(p)({ fd =>
+//      if(ExprOps.exists(e => firstSol.exists({case (id, str) => id.getPos==e.getPos}))(fd.fullBody)){
+//        val newFD = fd.duplicate()
+//        newFD.fullBody = ExprOps.preMap(e => firstSol.find({case (id, str) => id.getPos==e.getPos}) match {
+//          case Some((id,str)) =>
+//            Some(StringLiteral(str))
+//          case None => None
+//        })(fd.fullBody)
+//        Some(newFD)
+//      }
+//      else None
+//    })._1
+
     implicit val context = LeonContext.empty
     val fileInterface = new FileInterface(context.reporter)
-    var changedElements = List[StringModificationPosition]()
-    val newSourceCode = firstSol.toList
-//      Apply the modifications from the bottom to the top, to keep the line numbers consistent for the next modifications.
-      .sortBy({case (identifier, str) => identifier.getPos})
-      .reverse
-      .foldLeft(sourceCode)(
-        {case (sCode, (identifier, string))=>
-          changedElements = (identifier.getPos match {
-            case RangePosition(lineFrom, colFrom, pointFrom, lineTo, colTo, pointTo, file) => StringModificationPosition(lineFrom, colFrom, lineTo, colTo)
-            case _ => StringModificationPosition(0, 0, 0, 0)
-          }) :: changedElements
+//    var changedElements = List[StringPositionInSourceCode]()
+
+    def applySolution(sourceCode: String, solution: StringSolver.Assignment): String = {
+      solution.toList
+        .sortBy({case (identifier, str) => identifier.getPos})
+        .reverse
+        .foldLeft(sourceCode)(
+          {case (sCode, (identifier, string)) =>
           fileInterface.substitute(sCode, identifier, StringLiteral(string))}
-      )
+        )
+    }
+
+    def buildListOfStringPositionsForModifiedIdentifier(solution: StringSolver.Assignment): List[StringPositionInSourceCode] = {
+      solution.map({case (identifier, str)=>
+        identifier.getPos match {
+          case RangePosition(lineFrom, colFrom, pointFrom, lineTo, colTo, pointTo, file) => StringPositionInSourceCode(lineFrom, colFrom, lineTo, colTo)
+          case _ => StringPositionInSourceCode(0, 0, 0, 0)
+        }
+      }).toList
+    }
+
+    val newSourceCode = applySolution(sourceCode, firstSol)
+    val changedElements = buildListOfStringPositionsForModifiedIdentifier(firstSol)
+
+
+//    val newSourceCode = firstSol.toList
+////      Apply the modifications from the bottom to the top, to keep the line numbers consistent for the next modifications.
+//      .sortBy({case (identifier, str) => identifier.getPos})
+//      .reverse
+//      .foldLeft(sourceCode)(
+//        {case (sCode, (identifier, string))=>
+//          changedElements = (identifier.getPos match {
+//            case RangePosition(lineFrom, colFrom, pointFrom, lineTo, colTo, pointTo, file) => StringPositionInSourceCode(lineFrom, colFrom, lineTo, colTo)
+//            case _ => StringPositionInSourceCode(0, 0, 0, 0)
+//          }) :: changedElements
+//          fileInterface.substitute(sCode, identifier, StringLiteral(string))}
+//      )
     sReporter.report(Info, "New source code: "+ "DISABLED (to re-enable it, look for \"#VERBOSITY\" in StringModificationProcessor.scala)")
 //    #VERBOSITY
 //    sReporter.report(Info, "New source code: "+ newSourceCode)
@@ -207,70 +264,8 @@ object StringModificationProcessor {
         sReporter.report(Info, "The submission of the new source code failed because: "+log)
         StringModificationSubmissionResult(None, log)
     }
-    //#Original, before the migration to leon web client-server communication model
-//    apiService.submitSourceCode(SourceCodeSubmissionNetwork(newSourceCode, newSourceId)) match {
-//      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPageIDed), _), newSourceId) =>
-//        sReporter.report(Info, "Sending back to client the new source code and a WebPage with IDed WebElements")
-//        StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, changedElements, newSourceId, webPageIDed)), "")
-//      case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), newSourceId) =>
-//        sReporter.report(Info, "The submission of the new source code failed because: "+log)
-//        StringModificationSubmissionResult(None, log)
-//    }
-
-//    def stringWebAttrModification(argumentIndexOfModifiedStringWebAttrInWebElem: Int, webElement: WebElement, unevalExprOfWebElem: Expr) = {
-//      sReporter.report(Debug, "Original sourceCode: "+ sourceCode)
-//      unevalExprOfWebElem match {
-//        case CaseClass(CaseClassType(`paragraphCaseClassDef`, targs), Seq(textExpr)) => {
-//          //          Modifying the Text of a Paragraph
-//          def textExprToStringForm(textExpr: Expr, identifierToTextExprMap: scala.collection.mutable.Map[Identifier, Expr]): StringForm = {
-//            textExpr match {
-//              case StringLiteral(string) =>
-//                val identifier = Common.FreshIdentifier("l:"+textExpr.getPos.line+",c:"+textExpr.getPos.col).copiedFrom(textExpr)
-//                identifierToTextExprMap(identifier) = textExpr
-//                List(Right(identifier))
-//              case StringConcat(tExpr1, tExpr2) => textExprToStringForm(tExpr1,identifierToTextExprMap) ++ textExprToStringForm(tExpr2,identifierToTextExprMap)
-//            }
-//          }
-//          val originalText = webElement match {
-//            case Paragraph(text) => text
-//            // This second case should not happen since we normally already check that the type of the WebElement and
-//            //  the type of the WebElement the expr represents are the same when filling the sourceMap.
-//            case _ => failure("sourceMap gave the unevaluated Expr of a Paragraph, but the WebElement registered with the same key is not a Paragraph")
-//          }
-//          sReporter.report(Info, "Original text= " + originalText)
-//          val identifierToTextExprMap: scala.collection.mutable.Map[Identifier, Expr] = scala.collection.mutable.Map()
-//          val stringForm = textExprToStringForm(textExpr, identifierToTextExprMap)
-//          sReporter.report(Info, "StringForm= " + stringForm)
-//          val problem: Problem = List((stringForm, newVal))
-//          sReporter.report(Info, "StringSolver problem: "+StringSolver.renderProblem(problem))
-//          val solutionStream: Stream[Assignment] = StringSolver.solve(problem)
-//          sReporter.report(Info, "First 5 StringSolver solutions: "+solutionStream.take(5).foldLeft("")((str, assignment)=>str+assignment.toString()))
-//          val firstSol = solutionStream.headOption match{
-//            case Some(value) => value
-//            case None => failure("StringSolver returned no solutions")
-//          }
-//          implicit val context = LeonContext.empty
-//          val fileInterface = new FileInterface(context.reporter)
-//          val newSourceCode = firstSol.toList
-//            .sortBy({case (identifier, str) => identifier.getPos})
-//            .reverse
-//            .foldLeft(sourceCode)(
-//              {case (sCode, (identifier, string))=> fileInterface.substitute(sCode, identifier, StringLiteral(string))}
-//            )
-//          sReporter.report(Info, "New source code: "+ newSourceCode)
-//        }
-//        case CaseClass(CaseClassType(`headerCaseClassDef`, targs), _) => {
-////          Not implemented yet
-//          StringModificationSubmissionResult(Some("heyk"), "log")
-//        }
-//        case _ =>
-////        Should not happen?
-//          StringModificationSubmissionResult(Some("heyk"), "log")
-//      }
-//    }
-
-//    stringWebAttrModification(argumentIndexOfModifiedStringWebAttrInWebElem, webElement, unevalExprOfWebElem)
-
-//    StringModificationSubmissionResult(Some("heyk"), "log")
   }
 }
+
+//To be stored and reused along with the client-server dialogue on the resolving of a string modification ambiguity
+case class AmbiguityResolvingSession(originalSourceCode: String, originalStringModification: StringModification, lastQuestionAsked: AmbiguityResolvingQuestion, solutionStream: Stream[StringSolver.Assignment])
