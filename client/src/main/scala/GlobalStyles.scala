@@ -4,7 +4,6 @@ import scala.language.postfixOps
 
 object GlobalStyles extends StyleSheet.Inline {
   import dsl._
-
   /*style(unsafeRoot("body")(
     paddingTop(50.px))
   )*/

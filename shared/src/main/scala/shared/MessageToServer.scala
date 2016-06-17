@@ -9,7 +9,7 @@ sealed trait MessageToServerExpecting[ServerAnswerType <: MessageFromServer] ext
 
 case class GetBootstrapSourceCode() extends MessageToServerExpecting[GetBootstrapSourceCode_answer]
 case class SubmitSourceCode(source: String, requestId: Int) extends MessageToServerExpecting[SubmitSourceCodeResult]
-case class SubmitStringModification(stringModification: StringModification, sourceCodeId: Int, stringModID: Int) extends MessageToServerExpecting[SubmitStringModificationResult]
+case class SubmitStringModification(stringModification: StringModification, sourceCodeId: Int, stringModID: Int) extends MessageToServerExpecting[SubmitStringModification_answer]
 
 object MessageToServer {
   import boopickle.Default._

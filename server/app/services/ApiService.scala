@@ -55,7 +55,7 @@ class ApiService(onUserRequest: Boolean = true) extends Api {
     }
   }
 
-  def processStringModificationSubmission(submission: SubmitStringModification): SubmitStringModificationResult = {
+  def processStringModificationSubmission(submission: SubmitStringModification): SubmitStringModification_answer = {
     val sReporter = new ServerReporter
     val stringModification = submission.stringModification
     val stringModID = submission.stringModID
@@ -81,7 +81,7 @@ class ApiService(onUserRequest: Boolean = true) extends Api {
           |${weExprFromSourceMap}
            """.stripMargin)
 
-    SubmitStringModificationResult(StringModificationProcessor.process(stringModification, sourceCodeId, sReporter), sourceCodeId, stringModID)
+    SubmitStringModification_answer(StringModificationProcessor.process(stringModification, sourceCodeId, sReporter), sourceCodeId, stringModID)
   }
 }
 

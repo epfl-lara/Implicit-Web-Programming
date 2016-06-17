@@ -2,7 +2,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 import scala.scalajs.js
-import js.Dynamic.{ global => g, literal => l, newInstance => jsnew }
+import js.Dynamic.{global => g, literal => l, newInstance => jsnew}
 import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.annotation.ScalaJSDefined
 import scala.util.Failure
@@ -14,7 +14,7 @@ import org.scalajs.jquery.JQuery
 import org.scalajs.jquery.JQueryAjaxSettings
 import org.scalajs.jquery.JQueryEventObject
 import org.scalajs.jquery.JQueryXHR
-import org.scalajs.jquery.{ jQuery => $ }
+import org.scalajs.jquery.{jQuery => $}
 import com.scalawarrior.scalajs.ace._
 import autowire._
 import boopickle.Default._
@@ -27,6 +27,7 @@ import japgolly.scalajs.react.vdom.prefix_<^._
 import leon.lang.Map._
 import leon.webDSL.webDescription._
 import shared._
+
 import scala.scalajs.js.timers.SetTimeoutHandle
 import scalacss.ScalaCssReact._
 import scalacss.mutable.StyleSheetRegistry
@@ -48,6 +49,7 @@ object ScalaJS_Main extends js.JSApp {
 //  An attribute that SHOULD NOT be used by the end user, whose purpose is to serve as id for the html elements of the web interface
   val reservedAttributeForImplicitWebProgrammingID = "data-reservedattributeforimplicitwebprogrammingid".reactAttr
   val reservedAttributeForImplicitWebProgrammingID_name = "data-reservedattributeforimplicitwebprogrammingid"
+  val htmlWebPageDisplayerDivID = "htmlDisplayerDiv"
 
   def main(): Unit = {
     val registry = new StyleSheetRegistry
@@ -89,7 +91,7 @@ object ScalaJS_Main extends js.JSApp {
           //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
           //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
           SourceCodeSubmitButton.removeCustomBackground()
-          renderWebPage(webPage, "htmlDisplayerDiv")
+          renderWebPage(webPage, htmlWebPageDisplayerDivID)
         } else {
           println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
         }
@@ -97,83 +99,7 @@ object ScalaJS_Main extends js.JSApp {
       case SubmitSourceCodeResult(SourceCodeSubmissionResult(None, log), _) =>
         println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
     })
-
-//    CallbackForServerMessages(SubmitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent))){
-//      case submitSourceCode_answer: SubmitSourceCode_answer => {
-//        println("Server sent something in response to a code submission")
-//        submitSourceCode_answer match {
-//          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
-//            if(requestId == idOfLastSourceCodeModificationSent) {
-//              println(
-//                s"""
-//                   |Received "Some(WebPage)" for id = $requestId
-//                  """.stripMargin)
-//              //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
-//              //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
-//              SourceCodeSubmitButton.removeCustomBackground()
-//              renderWebPage(webPage, "htmlDisplayerDiv")
-//            } else {
-//              println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
-//            }
-//          }
-//          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
-//            println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
-//        }
-//      }
-//    }
-
-//    AjaxClient[Api].request(SubmitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent))).call().onComplete {
-//      case Failure(exception) => {println("error during submission of the source code: " + exception)}
-//      case Success(serverAnswer) => CallbackForServerMessages.callbackForServerMessages(serverAnswer)
-//    }
-//    #Original version, before the migration to leon web client-server communication model
-//    AjaxClient[Api].submitSourceCode(SourceCodeSubmissionNetwork(AceEditor.getEditorValue, idOfLastSourceCodeModificationSent)).call().onComplete {
-//      case Failure(exception) => {println("error during submission of the source code: " + exception)}
-//      case Success(sourceCodeProcessingResult) => {
-//        println("Server sent something in response to a code submission")
-//        sourceCodeProcessingResult match {
-//          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
-//            if(requestId == idOfLastSourceCodeModificationSent) {
-//            println(
-//              s"""
-//                 |Received "Some(WebPage)" for id = $requestId
-//                  """.stripMargin)
-////            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
-////            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
-//            SourceCodeSubmitButton.removeCustomBackground()
-//            renderWebPage(webPage, "htmlDisplayerDiv")
-//            } else {
-//              println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
-//            }
-//          }
-//          case SourceCodeSubmissionResultNetwork(SourceCodeSubmissionResult(None, log), _) =>
-//            println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
-//        }
-//      }
-//    }
   }
-  def submitSourceCode_serverAnswerHandler(sourceCodeProcessingResult: SubmitSourceCodeResult) = {
-    println("Server sent something in response to a code submission")
-    sourceCodeProcessingResult match {
-      case SubmitSourceCodeResult(SourceCodeSubmissionResult(Some(webPage), log), requestId) => {
-        if(requestId == idOfLastSourceCodeModificationSent) {
-          println(
-            s"""
-               |Received "Some(WebPage)" for id = $requestId
-                  """.stripMargin)
-          //            webPage.asInstanceOf[WebPageWithIDedWebElements].sons.foldLeft(0)((useless, webElem) => {println(webElem.weid); useless})
-          //            dom.document.getElementById("sourceCodeSubmitButton").setAttribute("style", "background-color:none")
-          SourceCodeSubmitButton.removeCustomBackground()
-          renderWebPage(webPage, "htmlDisplayerDiv")
-        } else {
-          println(s"Received answer $requestId while expecting answer $idOfLastSourceCodeModificationSent from the server. Waiting.")
-        }
-      }
-      case SubmitSourceCodeResult(SourceCodeSubmissionResult(None, log), _) =>
-        println("Received \"None\" while expecting \"Some(WebPage)\" from the server")
-    }
-  }
-
 
   private var idOfLastStringModificationSent = 0
   def submitStringModification(stringModification: StringModification) = {
@@ -184,87 +110,63 @@ object ScalaJS_Main extends js.JSApp {
         |NewValue: ${stringModification.newValue}
       """.stripMargin)
     idOfLastStringModificationSent += 1
-    Server ![SubmitStringModificationResult] (SubmitStringModification(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent), {
-      case SubmitStringModificationResult(stringModificationSubmissionResult, sourceId, stringModID) => {
+    Server ![SubmitStringModification_answer] (SubmitStringModification(stringModification, idOfLastSourceCodeModificationSent, idOfLastStringModificationSent), {
+      case SubmitStringModification_answer(stringModificationSubmissionResult, requestSourceId, requestStringModID) => {
+        println(
+          s"""Received a SubmitStringModification_answer from the server containing:
+             |  - StringModificationSubmissionResult
+             |  - requestSourceID = $requestSourceId
+             |  - requestStringModID = $requestStringModID
+           """.stripMargin)
         println("Server sent something in response to a string modification submission")
         stringModificationSubmissionResult match {
-          case StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, positions, newId, webPageWithIDedWebElements)), log) => {
-//            println(
-//              s"""
-//                 |Received new source code with stringModificationID of $stringModID: $newSourceCode
-//                  """.stripMargin)
-            println(
-              s"""
-                 |Received new source code with stringModificationID of $stringModID: TEMPORARY DISABLED
-                  """.stripMargin)
-            if (stringModID == idOfLastStringModificationSent && sourceId == idOfLastSourceCodeModificationSent ) {
-              idOfLastSourceCodeModificationSent = newId
-              renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
-              println("Accepting the stringModificationResult with id: "+stringModID)
+          case StringModificationSubmissionResult(potentialWebPageList, log) =>
+            println("Here is the log attached to the received StringModificationSubmissionResult: "+"\n\t"+log)
+            potentialWebPageList match {
+              case PotentialWebPagesList(newSourceCodeIDOption, solutionList, idOfClarifiedWebElementOption) =>
+                println("Received "+solutionList.length+" potential webPages")
+                solutionList.length match {
+                  case 0 =>
+                    println("[ERROR][UNDEFINED BEHAVIOUR]Received no potential webPage from the server")
+//                    TODO: Handle this case in some way
+                  case n =>
+                    println("Received at least one potential webPage, checking ID conditions")
+                    if (requestStringModID != idOfLastStringModificationSent || requestSourceId != idOfLastSourceCodeModificationSent) {
+                      println("ID conditions not met, ignoring server message")
+                    }
+                    else {
+                      println("ID conditions met. Rendering the first potential webPage and displaying its sourceCode")
+                      idOfLastSourceCodeModificationSent = newSourceCodeIDOption.get
+                      def setSourceCode(newSourceCode: String, changedElements: List[StringPositionInSourceCode]) = {
+                        AceEditor.removeAceEdOnChangeCallback()
+                        AceEditor.setEditorValue(newSourceCode)
+                        AceEditor.addMarkings(changedElements)
+                        AceEditor.activateAceEdOnChangeCallback_standard()
+                      }
+                      val firstSolution = potentialWebPageList.solutionList.head
+                      renderWebPage(firstSolution.idedWebPage, htmlWebPageDisplayerDivID)
+                      setSourceCode(firstSolution.sourceCode, firstSolution.positionsOfModificationsInSourceCode)
+                      if (n > 1 && idOfClarifiedWebElementOption.isDefined) {
+                        println("Received more than one ("+n+") potential webPage from the server. Launching a clarification procedure")
+                        println("idOfClarifiedWebElementOption= "+idOfClarifiedWebElementOption)
+                        potentialWebPageList.solutionList.foldLeft(1)(
+                          (index, solution)=> {
+                            println("Solution "+index+" :")
+                            println("WebPage: "+solution.idedWebPage)
+                            println("SourceCode: "+solution.sourceCode)
+                            (index+1)
+                          }
+                        )
+//                        TODO: Launch clarification sequence
+                        ClarificationBox.setSolutionButtons(potentialWebPageList.solutionList, idOfClarifiedWebElementOption.get)
+                      }
+                    }
+                }
             }
-            else {
-              println("Rejecting outdated stringModificationResult (id= "+stringModID+", while the id of the last StringModification sent is: "+idOfLastStringModificationSent+")")
-            }
-//            remove the standard onChange callback of the Ace Editor, so that the "submit source code change" button does not turn red
-//            because of the following call to AceEditor.setEditorValue
-            AceEditor.removeAceEdOnChangeCallback()
-            AceEditor.setEditorValue(newSourceCode)
-            AceEditor.addMarkings(positions)
-
-            AceEditor.activateAceEdOnChangeCallback_standard()
-          }
-          case StringModificationSubmissionResult(None, log) => {
-            println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
-            println("Received a StringModificationSubmissionResult from the server, but without sourceCode. Here is the log sent by the server:")
-            println("\"" + log + "\"")
           }
         }
-      }
-    })
-  }
-  def submitStringModification_serverAnswerHandler(stringModificationSubmissionResultForNetwork: SubmitStringModificationResult) = {
-    println("Server sent something in response to a string modification submission")
-    stringModificationSubmissionResultForNetwork match {
-      case SubmitStringModificationResult(
-      StringModificationSubmissionResult(Some(StringModificationSubmissionConcResult(newSourceCode, positions, newId, webPageWithIDedWebElements)), log),
-      sourceId,
-      stringModID
-      ) => {
-        //            println(
-        //              s"""
-        //                 |Received new source code with stringModificationID of $stringModID: $newSourceCode
-        //                  """.stripMargin)
-        println(
-          s"""
-             |Received new source code with stringModificationID of $stringModID: TEMPORARY DISABLED
-                  """.stripMargin)
-        if (stringModID == idOfLastStringModificationSent && sourceId == idOfLastSourceCodeModificationSent ) {
-          idOfLastSourceCodeModificationSent = newId
-          renderWebPage(webPageWithIDedWebElements, "htmlDisplayerDiv")
-          println("Accepting the stringModificationResult with id: "+stringModID)
-        }
-        else {
-          println("Rejecting outdated stringModificationResult (id= "+stringModID+", while the id of the last StringModification sent is: "+idOfLastStringModificationSent+")")
-        }
-        //            remove the standard onChange callback of the Ace Editor, so that the "submit source code change" button does not turn red
-        //            because of the following call to AceEditor.setEditorValue
-        AceEditor.removeAceEdOnChangeCallback()
-        AceEditor.setEditorValue(newSourceCode)
-        AceEditor.addMarkings(positions)
-
-        AceEditor.activateAceEdOnChangeCallback_standard()
-      }
-      case SubmitStringModificationResult(
-      StringModificationSubmissionResult(None, log),
-      sourceId,
-      stringModID
-      ) => {
-        println("Received \"None\" while expecting \"Some(newSourceCode)\" from the server")
-        println("Received a StringModificationSubmissionResult from the server, but without sourceCode. Here is the log sent by the server:")
-        println("\"" + log + "\"")
-      }
+      })
     }
-  }
 
   def getElementByImplicitWebProgrammingID(impWebProgID: String) : org.scalajs.jquery.JQuery = {
 //    $("["+reservedAttributeForImplicitWebProgrammingID_name+"="+impWebProgID+"]")
@@ -384,17 +286,18 @@ object ScalaJS_Main extends js.JSApp {
       submitHtmlButton
     )
     import scalacss.ScalaCssReact._
-    val discussionBox = <.div(
-      ^.id := "discussionbox",
-      GlobalStyles.discussionbox,
-      <.div(
-          ^.id := "discussionCommentId",
-          "Weeeeeeeelcome behind the scenes.",
-          GlobalStyles.discussionComment,
-          GlobalStyles.triangleBorderRight
-      ),
-      Clipart.goat()
-    )
+    val clarificationBox = ClarificationBox.initialState
+//    val discussionBox = <.div(
+//      ^.id := "discussionbox",
+//      GlobalStyles.discussionbox,
+//      <.div(
+//          ^.id := "discussionCommentId",
+//          "Weeeeeeeelcome behind the scenes.",
+//          GlobalStyles.discussionComment,
+//          GlobalStyles.triangleBorderRight
+//      ),
+//      Clipart.goat()
+//    )
 
     val divContent = <.div(
       ^.height := "100%",
@@ -402,7 +305,7 @@ object ScalaJS_Main extends js.JSApp {
       <.h1("Behind the scenes", ^.display.inline, ^.verticalAlign.middle),
       SourceCodeSubmitButton.scalaJSButton,
       htmlMenu,
-      discussionBox,
+      clarificationBox,
       <.div(^.id := "aceeditor")
     )
     ReactDOM.render(divContent, document.getElementById(destinationDivId))
@@ -438,7 +341,7 @@ object ScalaJS_Main extends js.JSApp {
 //        val par = <.p(
 //          "paragraph " + i
 //        )
-//        ReactDOM.render(par, document.getElementById("htmlDisplayerDiv"))
+//        ReactDOM.render(par, document.getElementById(htmlWebPageDisplayerDivID))
 //        i=i+1
 //        println("paragraph rendered")
 //    }
@@ -447,7 +350,7 @@ object ScalaJS_Main extends js.JSApp {
 //      "Test button"
 //    )
     val htmlDisplayerDiv = <.div(
-      ^.id := "htmlDisplayerDiv"
+      ^.id := htmlWebPageDisplayerDivID
     )
     val divContent = <.div(
 //      testButton,
@@ -500,22 +403,6 @@ object ScalaJS_Main extends js.JSApp {
         case GetBootstrapSourceCode_answer(None) =>
           println("Error: did not received bootStrapSourceCode in response to a GetBootstrapSourceCode message sent to the server")
       })
-//      AjaxClient[Api].sendToServer(GetBootstrapSourceCode()).call().onComplete {
-//        case Failure(exception) => {println("Unable to fetch bootstrap source code: " + exception.getMessage)}
-//        case Success(serverAnswer) => CallbackForServerMessages.callbackForServerMessages(serverAnswer)
-//        #Original version, before the migration to leon web client-server communication model
-//          serverReturn match {
-//            case Left(bootstrapSourceCode) =>
-//              println("ajax bootstrap source code request success")
-//              setEditorValue(bootstrapSourceCode)
-//              editor.getSession().on("change", aceEdOnChangeCallbackVal_master)
-////              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
-//              activateAceEdOnChangeCallback_standard()
-//              submitSourceCode()
-//            case Right(serverError) =>
-//              println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
-//          }
-
       resizeEditor()
 
 
@@ -524,20 +411,6 @@ object ScalaJS_Main extends js.JSApp {
       //    println("sourceCode should have been printed (in function initialiseAndIncludeAceEditorForSourceCode of ScalaJS_Main)")
       //    editor.setValue(sourceCode)
     }
-//    def getBootstrapSourceCode_serverAnswerHandler(serverAnswer: Either[String, ServerError]) = {
-//      serverAnswer match {
-//        case Left(bootstrapSourceCode) =>
-//          println("ajax bootstrap source code request success")
-//          setEditorValue(bootstrapSourceCode)
-//          aceEditor.get.getSession().on("change", aceEdOnChangeCallbackVal_master)
-//          //              editor.getSession().on("change", DoNothing_OnChangeCallback.onChangeCallback)
-//          activateAceEdOnChangeCallback_standard()
-//          submitSourceCode()
-//        case Right(serverError) =>
-//          println("ajax bootstrap source code request failed: It triggered the following server error: "+serverError.text)
-//      }
-//    }
-
 
 //    def updateEditorContent() = {
 //      aceEditor match {
@@ -569,13 +442,13 @@ object ScalaJS_Main extends js.JSApp {
     
     var prevMarker = List[Int]()
     
-    def addMarkings(positions: List[StringModificationPosition]) = {
+    def addMarkings(positions: List[StringPositionInSourceCode]) = {
       for(marker <- prevMarker) {
         aceEditor.foreach(_.getSession().removeMarker(marker))
       }
       prevMarker = for(s <- positions) yield {
         s match {
-          case StringModificationPosition(lineFrom, colFrom, lineTo, colTo) =>
+          case StringPositionInSourceCode(lineFrom, colFrom, lineTo, colTo) =>
             AceEditor.addMarking(lineFrom, colFrom, lineTo, colTo)(3000)
         }
       }
@@ -702,7 +575,7 @@ object ScalaJS_Main extends js.JSApp {
 //  def includeScriptInMainTemplate(scriptTagToInclude: scalatags.JsDom.TypedTag[org.scalajs.dom.html.Script]) = {
 //    dom.document.getElementById("scalajsScriptInclusionPoint").appendChild(scriptTagToInclude.render)
 //  }
-  def renderWebPage(webPageWithIDedWebElements: WebPageWithIDedWebElements, destinationDivID: String) = {
+  def renderWebPage(webPageWithIDedWebElements: WebPageWithIDedWebElements, destinationDivID: String = htmlWebPageDisplayerDivID) = {
     val webPageDiv = <.div(
       ^.id := "webPage",
       convertWebElementWithIDToReactElement(webPageWithIDedWebElements.main)

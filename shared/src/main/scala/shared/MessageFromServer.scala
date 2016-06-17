@@ -7,9 +7,12 @@ sealed trait MessageFromServer
 
 case class GetBootstrapSourceCode_answer(bootstrapSourceCode: Option[String]) extends MessageFromServer
 case class SubmitSourceCodeResult(result: SourceCodeSubmissionResult, requestId: Int) extends MessageFromServer
-case class SubmitStringModificationResult(
-    stringModificationSubmissionResult: StringModificationSubmissionResult,
-    sourceId: Int, stringModSubResID: Int) extends MessageFromServer
+case class SubmitStringModification_answer(
+       stringModificationSubmissionResult: StringModificationSubmissionResult,
+       requestSourceId: Int,
+       requestStringModSubResID: Int) extends MessageFromServer
+//                                          d: Either[Int,Int],
+//                                          a: DisambiguationProblemWithQuestion[T forSome{type T}],
 
 object MessageFromServer {
   import boopickle.Default._

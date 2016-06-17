@@ -1,11 +1,13 @@
 package memory
 
 import programEvaluator.SourceMap
+
 import scala.concurrent.Future
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import leon.LeonContext
+import stringModification.ClarificationSession
 
 /**
   * Created by dupriez on 2/25/16.
@@ -55,4 +57,7 @@ object Memory {
     }
   }
   def lastSourceId = _sourceMap._1
+
+//  Keys are the ids of the StringModification that triggered the need for Ambiguity Resolving
+  var clarificationSessionOption: Option[ClarificationSession] = None
 }

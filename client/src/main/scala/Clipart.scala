@@ -1,9 +1,8 @@
-import scala.language.postfixOps
-import japgolly.scalajs.react.ReactComponentU
 import japgolly.scalajs.react.vdom.SvgAttrs._
 import japgolly.scalajs.react.vdom.prefix_<^._
 import japgolly.scalajs.react.vdom.svg.prefix_<^.<
-import scalacss.Defaults._
+
+import scala.language.postfixOps
 
 /**
  * @author Mikael
